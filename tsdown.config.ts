@@ -1,10 +1,8 @@
 import distPackage from '@niche-works/rollup-plugin-dist-package';
-import fs from 'fs-extra';
-import path from 'path';
 import copy from 'rollup-plugin-copy';
 import { defineConfig } from 'tsdown';
 
-export default defineConfig((options) => ({
+export default defineConfig({
   entry: ['./src/**/*.ts'],
   unbundle: true,
   sourcemap: true,
@@ -45,6 +43,7 @@ export default defineConfig((options) => ({
           },
         },
       },
+      resolveWorkspaceDeps: true,
     }),
     copy({
       targets: [
@@ -55,4 +54,4 @@ export default defineConfig((options) => ({
       ],
     }),
   ],
-}));
+});
