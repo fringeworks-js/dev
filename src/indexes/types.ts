@@ -84,4 +84,23 @@ export type IndexesOptions = {
    * ファイルの操作は行わない
    */
   dryRun?: boolean;
+
+  /**
+   * 出力前の編集
+   */
+  transform?: (exports: string[]) => string[];
+
+  /**
+   * 出力の改行コード
+   *
+   * @default os.EOL
+   */
+  eol?: string;
+
+  /**
+   * 出力のエンコード
+   *
+   * @default `utf8`
+   */
+  encoding?: BufferEncoding;
 };

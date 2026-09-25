@@ -1,4 +1,5 @@
 import fs from 'fs-extra';
+import os from 'os';
 import { posix as path } from 'path';
 import isMatchingPath from '../isMatchingPath';
 import {
@@ -50,6 +51,8 @@ export default function indexes(options: IndexesOptions = {}) {
     exportAllAs = DEFAULT_EXPORT_ALL_AS,
     exportDefault = DEFAULT_EXPORT_DEFAULT,
     exportTypeAll = DEFAULT_EXPORT_TYPE_ALL,
+    eol = os.EOL,
+    encoding = 'utf8',
     ...rest
   } = options;
   const indexRegex = _createRegex(indexFileName);
@@ -63,6 +66,8 @@ export default function indexes(options: IndexesOptions = {}) {
     exportAllAs,
     exportDefault,
     exportTypeAll,
+    eol,
+    encoding,
     ...rest,
   });
 }
@@ -73,7 +78,7 @@ function _indexes(
   options: IndexesOptions,
 ) {
   const {
-    indexFileName = 'index.ts',
+    indexFileName,
     include,
     exclude,
     includeNamedWithDefault,
@@ -83,6 +88,9 @@ function _indexes(
     exportDefaultAs,
     exportTypeAll,
     dryRun,
+    transform,
+    eol,
+    encoding,
   } = options;
   const exportTargets = {
     exportAll,
@@ -157,29 +165,32 @@ function _indexes(
   }
 
   if (exportCodes.length) {
-    let index;
+    let exports: string[];
     if (hasDefaultExport && hasNamedExport && !includeNamedWithDefault) {
       // デフォルトエクスポートと名前付きエクスポートの混在を許さない場合は名前付きエクスポートを除外
-      index = exportCodes.reduce<string[]>((result, exportCode) => {
+      exports = exportCodes.reduce<string[]>((result, exportCode) => {
         if (exportCode.type !== 'named') {
           result.push(exportCode.code);
         }
         return result;
       }, []);
     } else {
-      index = exportCodes.map((exportCode) => exportCode.code);
+      exports = exportCodes.map((exportCode) => exportCode.code);
+    }
+    if (transform) {
+      exports = transform(exports);
     }
 
     const indexPath = path.join(targetPath, indexFileName);
     if (!dryRun) {
       // indexファイルの出力
-      fs.writeFileSync(indexPath, index.join('\r\n') + '\r\n', {
-        encoding: 'utf8',
+      fs.writeFileSync(indexPath, exports.join(eol) + eol, {
+        encoding,
       });
       console.info(indexPath);
     } else {
       console.info(indexPath + '-------------------------------------');
-      console.info(index.join('\r\n') + '\r\n');
+      console.info(exports.join(eol) + eol);
     }
   }
 
