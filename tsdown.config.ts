@@ -1,4 +1,4 @@
-import distPackage from '@niche-works/rollup-plugin-dist-package';
+import distPackage from '@fringeworks/rollup-plugin-dist-package';
 import copy from 'rollup-plugin-copy';
 import { defineConfig } from 'tsdown';
 

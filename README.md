@@ -1,3 +1,3 @@
-# @niche-works/dev
+# @fringeworks/dev
 
 A niche library for developers.
