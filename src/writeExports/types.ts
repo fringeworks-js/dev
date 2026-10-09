@@ -1,4 +1,4 @@
-import type { CreateExportsOptions } from '../createExports';
+import type { CreateExportsOptions } from "../createExports";
 
 export type WriteExportsOptions = CreateExportsOptions & {
   /**

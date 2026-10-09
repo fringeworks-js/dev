@@ -29,47 +29,48 @@ import generateIndexFiles from '@fringeworks/dev/generateIndexFiles';
 ```ts
 // scripts/indexes.ts
 import generateIndexFiles from '@fringeworks/dev/generateIndexFiles';
-import {
-  CONSTANTS,
-  PRIVATE,
-  TEST_FILE,
-} from '@fringeworks/dev/generateIndexFiles/constants';
 
-generateIndexFiles({
-  exclude: [
-    CONSTANTS,
-    PRIVATE,
-    TEST_FILE,
-    { valueType: 'path', conditions: /\/_internal\/.+/ },
-  ],
-});
+generateIndexFiles();
 ```
 
-既定では次のようなファイル構成から、
+既定では、各機能のディレクトリの index で主となるモジュールを default export と名前付き export の両方で export し、カテゴリーとルートの index では `export *` で引き継ぎます。次のようなファイル構成から、
 
 ```
 src/
-├── foo/
-│   ├── foo.ts
-│   └── types.ts
-└── bar/
-    └── bar.ts
+├── number/
+│   └── keepInRange/
+│       ├── constants.ts
+│       ├── keepInRange.ts
+│       ├── keepInRange.test.ts
+│       └── types.ts
+└── _internal/
+    └── helper.ts
 ```
 
-次の index ファイルが生成されます。
+次の index ファイルが生成されます。名前が `_` で始まるディレクトリ・ファイルとテストファイルは対象になりません。
 
 ```ts
-// src/foo/index.ts
-export { default } from './foo';
+// src/number/keepInRange/index.ts
+export * from './constants';
+export { default as keepInRange, default } from './keepInRange';
 export type * from './types';
 
-// src/bar/index.ts
-export { default } from './bar';
+// src/number/index.ts
+export * from './keepInRange';
 
 // src/index.ts
-export { default as bar } from './bar';
-export { default as foo } from './foo';
+export * from './number';
 ```
+
+利用者は、どのパスからでも同じ名前で import できます。
+
+```ts
+import { keepInRange, RangeMode } from 'my-package';
+import { keepInRange } from 'my-package/number';
+import keepInRange from 'my-package/number/keepInRange';
+```
+
+default export と名前付き export を同じファイルから export するため、CJS も出力する場合は、ビルドの出力設定を `exports: 'named'` にして混在の警告を抑えます。
 
 ### バンドラーの `external` 設定
 
@@ -135,59 +136,68 @@ generateIndexFiles(options?: GenerateIndexFilesOptions): void
 ```
 
 `srcPath` 配下のディレクトリを再帰的にたどり、各ディレクトリに index ファイルを生成します。\
-`include` に一致し `exclude` に一致しないファイル・ディレクトリが export の対象になります。export の形式は `exportAll`・`exportAllAs`・`exportDefault`・`exportDefaultAs`・`exportTypeAll` の順に条件を調べ、最初に一致したものを使います。どれにも一致しない場合は `export { default as name } from './name';` になります。\
+`include` に一致し `exclude` に一致しないファイル・ディレクトリが export の対象になります。export の形式は `exportAllAs`・`exportDefault`・`exportDefaultAndNamed`・`exportDefaultAs`・`exportTypeAll`・`exportAll` の順に条件を調べ、最初に一致したものを使います。範囲の広い `exportAll` を最後に調べるため、個別に指定した形式が優先されます。どれにも一致しない場合は `export { default as name } from './name';` になります。\
 export する対象がないディレクトリには index ファイルを生成しません。
 
-| オプション                 | 型                                | 説明                                                                                                                                                                   |
-| -------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `srcPath?`                 | `string`                          | 処理対象のディレクトリ。既定値は `'src'`                                                                                                                               |
-| `indexFileName?`           | `string`                          | index ファイルの名前。既定値は `'index.ts'`                                                                                                                            |
-| `ignore?`                  | `IsMatchingPathCondition[]`       | index ファイルを生成しないディレクトリ。一致したディレクトリの配下もたどらない                                                                                         |
-| `include?`                 | `IsMatchingPathCondition[]`       | export の対象。既定値は `[TS_JS, HAS_INDEX_DIR]`                                                                                                                       |
-| `exclude?`                 | `IsMatchingPathCondition[]`       | `include` に一致しても export しないもの。既定値は `[TEST_DIR, PRIVATE]`                                                                                               |
-| `includeNamedWithDefault?` | `boolean`                         | 同じ index ファイルにデフォルトエクスポートがあっても名前付きエクスポートを残す。CJS に変換したモジュールに `default` という名前でアクセスしてよい場合に `true` にする |
-| `exportAll?`               | `IsMatchingPathCondition[]`       | `export * from './name';` で export するもの。既定値は `[CONSTANTS]`                                                                                                   |
-| `exportAllAs?`             | `IsMatchingPathCondition[]`       | `export * as name from './name';` で export するもの。既定値は `[NAMESPACE_DIR]`                                                                                       |
-| `exportDefault?`           | `IsMatchingPathCondition[]`       | `export { default } from './name';` で export するもの。既定値は `[MAIN_FILE]`                                                                                         |
-| `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | `export { default as name } from './name';` で export するもの                                                                                                         |
-| `exportTypeAll?`           | `IsMatchingPathCondition[]`       | `export type * from './name';` で export するもの。既定値は `[TYPES]`                                                                                                  |
-| `dryRun?`                  | `boolean`                         | ファイルを書き込まず、生成内容をコンソールに出力する                                                                                                                   |
-| `transform?`               | `(exports: string[]) => string[]` | 出力前に export 文の配列を編集する                                                                                                                                     |
-| `eol?`                     | `string`                          | 改行コード。既定値は `os.EOL`                                                                                                                                          |
-| `encoding?`                | `BufferEncoding`                  | 出力のエンコード。既定値は `'utf8'`                                                                                                                                    |
+| オプション                 | 型                                | 説明                                                                                                                                                                                               |
+| -------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `srcPath?`                 | `string`                          | 処理対象のディレクトリ。既定値は `'src'`                                                                                                                                                           |
+| `indexFileName?`           | `string`                          | index ファイルの名前。既定値は `'index.ts'`                                                                                                                                                        |
+| `ignore?`                  | `IsMatchingPathCondition[]`       | index ファイルを生成しないディレクトリ。一致したディレクトリの配下もたどらない。既定値は `[PRIVATE]`                                                                                               |
+| `include?`                 | `IsMatchingPathCondition[]`       | export の対象。既定値は `[TS_JS, HAS_INDEX_DIR]`                                                                                                                                                   |
+| `exclude?`                 | `IsMatchingPathCondition[]`       | `include` に一致しても export しないもの。既定値は `[TEST_DIR, TEST_FILE, PRIVATE]`                                                                                                                |
+| `includeNamedWithDefault?` | `boolean`                         | 同じ index ファイルにデフォルトエクスポートがあっても名前付きエクスポートを残す。`false` の場合は名前付きエクスポートを除き、`exportDefaultAndNamed` は default export だけにする。既定値は `true` |
+| `exportAll?`               | `IsMatchingPathCondition[]`       | `export * from './name';` で export するもの。既定値は `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                                |
+| `exportAllAs?`             | `IsMatchingPathCondition[]`       | `export * as name from './name';` で export するもの。既定値は `[]`                                                                                                                                |
+| `exportDefault?`           | `IsMatchingPathCondition[]`       | `export { default } from './name';` で export するもの。既定値は `[]`                                                                                                                              |
+| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | `export { default as name, default } from './name';` で export するもの。既定値は `[MAIN_FILE]`                                                                                                    |
+| `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | `export { default as name } from './name';` で export するもの                                                                                                                                     |
+| `exportTypeAll?`           | `IsMatchingPathCondition[]`       | `export type * from './name';` で export するもの。既定値は `[TYPES]`                                                                                                                              |
+| `dryRun?`                  | `boolean`                         | ファイルを書き込まず、生成内容をコンソールに出力する                                                                                                                                               |
+| `transform?`               | `(exports: string[]) => string[]` | 出力前に export 文の配列を編集する                                                                                                                                                                 |
+| `eol?`                     | `string`                          | 改行コード。既定値は `os.EOL`                                                                                                                                                                      |
+| `encoding?`                | `BufferEncoding`                  | 出力のエンコード。既定値は `'utf8'`                                                                                                                                                                |
 
 #### 定数
 
 `@fringeworks/dev/generateIndexFiles/constants` から、オプションに指定できる条件を読み込めます。\
 `TS_JS`・`TYPES`・`CONSTANTS`・`TEST_DIR`・`TEST_FILE`・`PRIVATE`・`DEFAULT_EXCLUDE` は、ほかの関数と共通の条件として `@fringeworks/dev/constants` からも読み込めます。
 
-| 定数                      | 説明                                                             |
-| ------------------------- | ---------------------------------------------------------------- |
-| `TS_JS`                   | 拡張子が `.ts`・`.tsx`・`.js`・`.jsx` のファイル                 |
-| `TYPES`                   | `types.ts`                                                       |
-| `CONSTANTS`               | `constants.ts`・`constants.tsx`                                  |
-| `HAS_INDEX_DIR`           | 直下に index ファイルのあるディレクトリ                          |
-| `MAIN_FILE`               | 拡張子を除いた名前が親ディレクトリ名と同じファイル               |
-| `NAMESPACE_DIR`           | 名前が小文字で始まり、直下に同じ名前のファイルがないディレクトリ |
-| `TEST_DIR`                | `__test__` ディレクトリの配下                                    |
-| `TEST_FILE`               | `*.test.ts`・`*.test.tsx`・`*.test.js`・`*.test.jsx`             |
-| `PRIVATE`                 | 名前が `_` で始まるファイル・ディレクトリ                        |
-| `DEFAULT_INCLUDE`         | `include` の既定値                                               |
-| `DEFAULT_EXCLUDE`         | `exclude` の既定値                                               |
-| `DEFAULT_EXPORT_ALL`      | `exportAll` の既定値                                             |
-| `DEFAULT_EXPORT_ALL_AS`   | `exportAllAs` の既定値                                           |
-| `DEFAULT_EXPORT_DEFAULT`  | `exportDefault` の既定値                                         |
-| `DEFAULT_EXPORT_TYPE_ALL` | `exportTypeAll` の既定値                                         |
+| 定数                               | 説明                                                             |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| `TS_JS`                            | 拡張子が `.ts`・`.tsx`・`.js`・`.jsx` のファイル                 |
+| `TYPES`                            | `types.ts`                                                       |
+| `CONSTANTS`                        | `constants.ts`・`constants.tsx`                                  |
+| `HAS_INDEX_DIR`                    | 直下に index ファイルのあるディレクトリ                          |
+| `MAIN_FILE`                        | 拡張子を除いた名前が親ディレクトリ名と同じファイル               |
+| `NAMESPACE_DIR`                    | 名前が小文字で始まり、直下に同じ名前のファイルがないディレクトリ |
+| `TEST_DIR`                         | `__test__` ディレクトリの配下                                    |
+| `TEST_FILE`                        | `*.test.ts`・`*.test.tsx`・`*.test.js`・`*.test.jsx`             |
+| `PRIVATE`                          | 名前が `_` で始まるファイル・ディレクトリ                        |
+| `DEFAULT_IGNORE`                   | `ignore` の既定値                                                |
+| `DEFAULT_INCLUDE`                  | `include` の既定値                                               |
+| `DEFAULT_EXCLUDE`                  | `exclude` の既定値                                               |
+| `DEFAULT_EXPORT_ALL`               | `exportAll` の既定値                                             |
+| `DEFAULT_EXPORT_ALL_AS`            | `exportAllAs` の既定値                                           |
+| `DEFAULT_EXPORT_DEFAULT`           | `exportDefault` の既定値                                         |
+| `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | `exportDefaultAndNamed` の既定値                                 |
+| `DEFAULT_EXPORT_TYPE_ALL`          | `exportTypeAll` の既定値                                         |
 
 既定値に条件を足す場合は、定数と組み合わせて指定します。
 
 ```ts
 import {
   DEFAULT_EXCLUDE,
-  TEST_FILE,
+  NAMESPACE_DIR,
 } from '@fringeworks/dev/generateIndexFiles/constants';
 
-generateIndexFiles({ exclude: [...DEFAULT_EXCLUDE, TEST_FILE] });
+// 特定のディレクトリを export から除く
+generateIndexFiles({
+  exclude: [...DEFAULT_EXCLUDE, { valueType: 'path', conditions: 'src/css' }],
+});
+
+// 小文字で始まるディレクトリを名前空間として export する（export * as name）
+generateIndexFiles({ exportAllAs: [NAMESPACE_DIR] });
 ```
 
 ### `createExports`

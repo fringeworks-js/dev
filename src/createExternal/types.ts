@@ -1,4 +1,4 @@
-import type { IsMatchingPathCondition } from '../isMatchingPath';
+import type { IsMatchingPathCondition } from "../isMatchingPath";
 
 /**
  * オプション

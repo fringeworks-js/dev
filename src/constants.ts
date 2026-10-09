@@ -1,11 +1,11 @@
-import type { IsMatchingPathCondition } from './isMatchingPath';
+import type { IsMatchingPathCondition } from "./isMatchingPath";
 
 /**
  * types.ts
  */
 export const TYPES: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
+  valueType: "base",
+  entryType: "file",
   conditions: /^types\.ts$/i,
 };
 
@@ -13,8 +13,8 @@ export const TYPES: IsMatchingPathCondition = {
  * constants.ts
  */
 export const CONSTANTS: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
+  valueType: "base",
+  entryType: "file",
   conditions: /^constants\.(ts|tsx)$/i,
 };
 
@@ -22,8 +22,8 @@ export const CONSTANTS: IsMatchingPathCondition = {
  * TypeScriptとJavaScript
  */
 export const TS_JS: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
+  valueType: "base",
+  entryType: "file",
   conditions: /.+\.(ts|tsx|js|jsx)$/i,
 };
 
@@ -31,7 +31,7 @@ export const TS_JS: IsMatchingPathCondition = {
  * テストディレクトリ配下
  */
 export const TEST_DIR: IsMatchingPathCondition = {
-  valueType: 'path',
+  valueType: "path",
   conditions: /.+\/__test__\/.+/i,
 };
 
@@ -39,7 +39,7 @@ export const TEST_DIR: IsMatchingPathCondition = {
  * テストファイル
  */
 export const TEST_FILE: IsMatchingPathCondition = {
-  valueType: 'base',
+  valueType: "base",
   conditions: /.*\.test\.(ts|tsx|js|jsx)$/i,
 };
 
@@ -47,7 +47,7 @@ export const TEST_FILE: IsMatchingPathCondition = {
  * ファイル名またはディレクトリ名が`_`で始まる
  */
 export const PRIVATE: IsMatchingPathCondition = {
-  valueType: 'base',
+  valueType: "base",
   conditions: /^_/,
 };
 
@@ -57,6 +57,8 @@ export const PRIVATE: IsMatchingPathCondition = {
 export const DEFAULT_EXCLUDE = [
   // __test__フォルダ配下の全てを除外
   TEST_DIR,
+  // テストファイルを除外
+  TEST_FILE,
   // ディレクトリ名、ファイル名が_で始まるものを除外
   PRIVATE,
 ];

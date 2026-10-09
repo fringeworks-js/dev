@@ -1,2 +1,2 @@
-export { default } from './createExports';
-export type * from './types';
+export { default as createExports, default } from "./createExports";
+export type * from "./types";

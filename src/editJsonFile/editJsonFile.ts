@@ -1,7 +1,7 @@
-import fs from 'fs-extra';
-import path from 'path';
-import { isFunction, merge } from 'remeda';
-import checkExistence from '../checkExistence';
+import fs from "fs-extra";
+import path from "path";
+import { isFunction, merge } from "remeda";
+import checkExistence from "../checkExistence";
 
 /**
  * JSONファイルを更新する

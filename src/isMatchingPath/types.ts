@@ -1,4 +1,4 @@
-import type { ParsedPath } from 'path';
+import type { ParsedPath } from "path";
 
 /**
  * 一致条件
@@ -40,14 +40,14 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
      * @default 'path'
      */
     valueType?:
-      | 'path'
-      | 'base'
-      | 'name'
-      | 'ext'
-      | 'dirpath'
-      | 'dirbase'
-      | 'dirname'
-      | 'dirext';
+      | "path"
+      | "base"
+      | "name"
+      | "ext"
+      | "dirpath"
+      | "dirbase"
+      | "dirname"
+      | "dirext";
 
     /**
      * 検査対象の種別
@@ -58,7 +58,7 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
      *
      * @default 'both'
      */
-    entryType?: 'dir' | 'file' | 'both';
+    entryType?: "dir" | "file" | "both";
 
     /**
      * 一致条件

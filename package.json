@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/dev",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "description": "A library some will find handy, built for developers.",
   "keywords": [
@@ -15,9 +15,21 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./constants": "./src/constants.ts",
-    "./*": "./src/*/index.ts",
-    "./*/constants": "./src/*/constants.ts"
+    "./addJsExtensions": "./src/addJsExtensions/index.ts",
+    "./checkExistence": "./src/checkExistence/index.ts",
+    "./createExports": "./src/createExports/index.ts",
+    "./createExternal": "./src/createExternal/index.ts",
+    "./createSassClassNameFunction": "./src/createSassClassNameFunction/index.ts",
+    "./editJsonFile": "./src/editJsonFile/index.ts",
+    "./generateIndexFiles": "./src/generateIndexFiles/index.ts",
+    "./generatePublishPackageJson": "./src/generatePublishPackageJson/index.ts",
+    "./installFromLocal": "./src/installFromLocal/index.ts",
+    "./isIncludedPath": "./src/isIncludedPath/index.ts",
+    "./isMatchingPath": "./src/isMatchingPath/index.ts",
+    "./moveFilesToSubdirs": "./src/moveFilesToSubdirs/index.ts",
+    "./removeFiles": "./src/removeFiles/index.ts",
+    "./setVersion": "./src/setVersion/index.ts",
+    "./writeExports": "./src/writeExports/index.ts"
   },
   "main": "./src/index.ts",
   "module": "./src/index.ts",
@@ -28,7 +40,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "indexes": "tsx scripts/indexes.ts",
     "lint": "tsdown --dry-run",
-    "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.js"
+    "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts",
+    "writeexport": "tsx scripts/indexes.ts"
   },
   "dependencies": {
     "fs-extra": "^11.3.4",

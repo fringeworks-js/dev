@@ -1,12 +1,12 @@
-import fs from 'fs-extra';
-import { posix as path } from 'path';
-import { isFunction, isString } from 'remeda';
+import fs from "fs-extra";
+import { posix as path } from "path";
+import { isFunction, isString } from "remeda";
 import type {
   ConditionFnOptions,
   ConditionValues,
   IsMatchingPathCondition,
   IsMatchingPathOptions,
-} from './types';
+} from "./types";
 
 /**
  * 処理対象のパスか判定する
@@ -74,12 +74,12 @@ function _isMatching<O extends ConditionFnOptions = ConditionFnOptions>(
     return condition(values, (options.conditionOptions ?? {}) as O);
   } else {
     // 条件が設定
-    const { valueType = 'path', entryType = 'both', conditions } = condition;
-    if (entryType !== 'both') {
+    const { valueType = "path", entryType = "both", conditions } = condition;
+    if (entryType !== "both") {
       const stat = fs.statSync(values.path);
       if (
-        (stat.isDirectory() && entryType !== 'dir') ||
-        (stat.isFile() && entryType !== 'file')
+        (stat.isDirectory() && entryType !== "dir") ||
+        (stat.isFile() && entryType !== "file")
       ) {
         return false;
       }

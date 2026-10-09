@@ -1,2 +1,2 @@
-export { default } from './moveFilesToSubdirs';
-export type * from './types';
+export { default as moveFilesToSubdirs, default } from "./moveFilesToSubdirs";
+export type * from "./types";

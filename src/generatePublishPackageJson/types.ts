@@ -1,5 +1,5 @@
-import type { JsonReadOptions, JsonWriteOptions } from 'fs-extra';
-import type { PackageJson } from 'type-fest';
+import type { JsonReadOptions, JsonWriteOptions } from "fs-extra";
+import type { PackageJson } from "type-fest";
 
 export type GeneratePublishPackageJsonOptions = {
   /**
@@ -26,7 +26,7 @@ export type GeneratePublishPackageJsonOptions = {
    *   ...
    * }
    */
-  exports?: PackageJson['exports'];
+  exports?: PackageJson["exports"];
 
   /**
    * 任意の編集を行う関数

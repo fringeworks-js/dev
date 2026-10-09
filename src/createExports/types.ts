@@ -1,6 +1,6 @@
-import type { PackageJson } from 'type-fest';
-import type { ExportEntryExtensions } from '../_internal/createExportEntry';
-import type { IsMatchingPathCondition } from '../isMatchingPath';
+import type { PackageJson } from "type-fest";
+import type { ExportEntryExtensions } from "../_internal/createExportEntry";
+import type { IsMatchingPathCondition } from "../isMatchingPath";
 
 export type CreateExportsOptions = ExportEntryExtensions & {
   /**
@@ -17,7 +17,7 @@ export type CreateExportsOptions = ExportEntryExtensions & {
    *
    * @default 'src'
    */
-  target?: 'src' | 'dist';
+  target?: "src" | "dist";
 
   /**
    * exportsの値に付ける接頭辞

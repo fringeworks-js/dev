@@ -1,6 +1,6 @@
-import fg from 'fast-glob';
-import type { Options, Pattern } from 'fast-glob/out/index';
-import fs from 'fs-extra';
+import fg from "fast-glob";
+import type { Options, Pattern } from "fast-glob/out/index";
+import fs from "fs-extra";
 
 export default async function removeFiles(
   source: Pattern | Pattern[],

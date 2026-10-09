@@ -29,47 +29,48 @@ Generates an `index.ts` in each directory under `src` that exports the modules i
 ```ts
 // scripts/indexes.ts
 import generateIndexFiles from '@fringeworks/dev/generateIndexFiles';
-import {
-  CONSTANTS,
-  PRIVATE,
-  TEST_FILE,
-} from '@fringeworks/dev/generateIndexFiles/constants';
 
-generateIndexFiles({
-  exclude: [
-    CONSTANTS,
-    PRIVATE,
-    TEST_FILE,
-    { valueType: 'path', conditions: /\/_internal\/.+/ },
-  ],
-});
+generateIndexFiles();
 ```
 
-With the defaults, this file structure
+By default, the index of each feature directory exports its main module both as the default export and as a named export, and the indexes of categories and the root pass everything on with `export *`. This file structure
 
 ```
 src/
-├── foo/
-│   ├── foo.ts
-│   └── types.ts
-└── bar/
-    └── bar.ts
+├── number/
+│   └── keepInRange/
+│       ├── constants.ts
+│       ├── keepInRange.ts
+│       ├── keepInRange.test.ts
+│       └── types.ts
+└── _internal/
+    └── helper.ts
 ```
 
-produces the following index files.
+produces the following index files. Directories and files whose name starts with `_` and test files are left out.
 
 ```ts
-// src/foo/index.ts
-export { default } from './foo';
+// src/number/keepInRange/index.ts
+export * from './constants';
+export { default as keepInRange, default } from './keepInRange';
 export type * from './types';
 
-// src/bar/index.ts
-export { default } from './bar';
+// src/number/index.ts
+export * from './keepInRange';
 
 // src/index.ts
-export { default as bar } from './bar';
-export { default as foo } from './foo';
+export * from './number';
 ```
+
+Users can import by the same name from any path.
+
+```ts
+import { keepInRange, RangeMode } from 'my-package';
+import { keepInRange } from 'my-package/number';
+import keepInRange from 'my-package/number/keepInRange';
+```
+
+Because default and named exports come from the same file, set the build output option `exports: 'named'` when you also output CJS, to suppress the mixed-exports warning.
 
 ### The bundler's `external` option
 
@@ -135,59 +136,68 @@ generateIndexFiles(options?: GenerateIndexFilesOptions): void
 ```
 
 Walks the directories under `srcPath` recursively and generates an index file in each of them.\
-Files and directories that match `include` and do not match `exclude` are exported. The export form is decided by checking `exportAll`, `exportAllAs`, `exportDefault`, `exportDefaultAs`, and `exportTypeAll` in that order and using the first match. If none matches, `export { default as name } from './name';` is used.\
+Files and directories that match `include` and do not match `exclude` are exported. The export form is decided by checking `exportAllAs`, `exportDefault`, `exportDefaultAndNamed`, `exportDefaultAs`, `exportTypeAll`, and `exportAll` in that order and using the first match. The broad `exportAll` is checked last so that more specific forms take precedence. If none matches, `export { default as name } from './name';` is used.\
 No index file is generated in a directory that has nothing to export.
 
-| Option                     | Type                              | Description                                                                                                                                                               |
-| -------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `srcPath?`                 | `string`                          | The directory to process. Defaults to `'src'`                                                                                                                             |
-| `indexFileName?`           | `string`                          | The name of index files. Defaults to `'index.ts'`                                                                                                                         |
-| `ignore?`                  | `IsMatchingPathCondition[]`       | Directories in which no index file is generated. Their contents are not walked either                                                                                     |
-| `include?`                 | `IsMatchingPathCondition[]`       | What to export. Defaults to `[TS_JS, HAS_INDEX_DIR]`                                                                                                                      |
-| `exclude?`                 | `IsMatchingPathCondition[]`       | What not to export even if it matches `include`. Defaults to `[TEST_DIR, PRIVATE]`                                                                                        |
-| `includeNamedWithDefault?` | `boolean`                         | Keeps named exports even when the same index file has a default export. Set to `true` when it is fine to access a module converted to CJS through a name called `default` |
-| `exportAll?`               | `IsMatchingPathCondition[]`       | What to export as `export * from './name';`. Defaults to `[CONSTANTS]`                                                                                                    |
-| `exportAllAs?`             | `IsMatchingPathCondition[]`       | What to export as `export * as name from './name';`. Defaults to `[NAMESPACE_DIR]`                                                                                        |
-| `exportDefault?`           | `IsMatchingPathCondition[]`       | What to export as `export { default } from './name';`. Defaults to `[MAIN_FILE]`                                                                                          |
-| `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | What to export as `export { default as name } from './name';`                                                                                                             |
-| `exportTypeAll?`           | `IsMatchingPathCondition[]`       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                                                   |
-| `dryRun?`                  | `boolean`                         | Prints the generated content to the console instead of writing files                                                                                                      |
-| `transform?`               | `(exports: string[]) => string[]` | Edits the array of export statements before output                                                                                                                        |
-| `eol?`                     | `string`                          | The line ending. Defaults to `os.EOL`                                                                                                                                     |
-| `encoding?`                | `BufferEncoding`                  | The output encoding. Defaults to `'utf8'`                                                                                                                                 |
+| Option                     | Type                              | Description                                                                                                                                                                            |
+| -------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `srcPath?`                 | `string`                          | The directory to process. Defaults to `'src'`                                                                                                                                          |
+| `indexFileName?`           | `string`                          | The name of index files. Defaults to `'index.ts'`                                                                                                                                      |
+| `ignore?`                  | `IsMatchingPathCondition[]`       | Directories in which no index file is generated. Their contents are not walked either. Defaults to `[PRIVATE]`                                                                         |
+| `include?`                 | `IsMatchingPathCondition[]`       | What to export. Defaults to `[TS_JS, HAS_INDEX_DIR]`                                                                                                                                   |
+| `exclude?`                 | `IsMatchingPathCondition[]`       | What not to export even if it matches `include`. Defaults to `[TEST_DIR, TEST_FILE, PRIVATE]`                                                                                          |
+| `includeNamedWithDefault?` | `boolean`                         | Keeps named exports even when the same index file has a default export. If `false`, named exports are dropped and `exportDefaultAndNamed` exports only the default. Defaults to `true` |
+| `exportAll?`               | `IsMatchingPathCondition[]`       | What to export as `export * from './name';`. Defaults to `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                  |
+| `exportAllAs?`             | `IsMatchingPathCondition[]`       | What to export as `export * as name from './name';`. Defaults to `[]`                                                                                                                  |
+| `exportDefault?`           | `IsMatchingPathCondition[]`       | What to export as `export { default } from './name';`. Defaults to `[]`                                                                                                                |
+| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | What to export as `export { default as name, default } from './name';`. Defaults to `[MAIN_FILE]`                                                                                      |
+| `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | What to export as `export { default as name } from './name';`                                                                                                                          |
+| `exportTypeAll?`           | `IsMatchingPathCondition[]`       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                                                                |
+| `dryRun?`                  | `boolean`                         | Prints the generated content to the console instead of writing files                                                                                                                   |
+| `transform?`               | `(exports: string[]) => string[]` | Edits the array of export statements before output                                                                                                                                     |
+| `eol?`                     | `string`                          | The line ending. Defaults to `os.EOL`                                                                                                                                                  |
+| `encoding?`                | `BufferEncoding`                  | The output encoding. Defaults to `'utf8'`                                                                                                                                              |
 
 #### Constants
 
 Conditions for the options can be imported from `@fringeworks/dev/generateIndexFiles/constants`.\
 `TS_JS`, `TYPES`, `CONSTANTS`, `TEST_DIR`, `TEST_FILE`, `PRIVATE`, and `DEFAULT_EXCLUDE` are shared with other functions and can also be imported from `@fringeworks/dev/constants`.
 
-| Constant                  | Description                                                                                              |
-| ------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `TS_JS`                   | Files with the extension `.ts`, `.tsx`, `.js`, or `.jsx`                                                 |
-| `TYPES`                   | `types.ts`                                                                                               |
-| `CONSTANTS`               | `constants.ts` and `constants.tsx`                                                                       |
-| `HAS_INDEX_DIR`           | Directories that directly contain an index file                                                          |
-| `MAIN_FILE`               | Files whose name without the extension equals the parent directory's name                                |
-| `NAMESPACE_DIR`           | Directories whose name starts with a lowercase letter and that directly contain no file of the same name |
-| `TEST_DIR`                | Anything under a `__test__` directory                                                                    |
-| `TEST_FILE`               | `*.test.ts`, `*.test.tsx`, `*.test.js`, and `*.test.jsx`                                                 |
-| `PRIVATE`                 | Files and directories whose name starts with `_`                                                         |
-| `DEFAULT_INCLUDE`         | The default of `include`                                                                                 |
-| `DEFAULT_EXCLUDE`         | The default of `exclude`                                                                                 |
-| `DEFAULT_EXPORT_ALL`      | The default of `exportAll`                                                                               |
-| `DEFAULT_EXPORT_ALL_AS`   | The default of `exportAllAs`                                                                             |
-| `DEFAULT_EXPORT_DEFAULT`  | The default of `exportDefault`                                                                           |
-| `DEFAULT_EXPORT_TYPE_ALL` | The default of `exportTypeAll`                                                                           |
+| Constant                           | Description                                                                                              |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `TS_JS`                            | Files with the extension `.ts`, `.tsx`, `.js`, or `.jsx`                                                 |
+| `TYPES`                            | `types.ts`                                                                                               |
+| `CONSTANTS`                        | `constants.ts` and `constants.tsx`                                                                       |
+| `HAS_INDEX_DIR`                    | Directories that directly contain an index file                                                          |
+| `MAIN_FILE`                        | Files whose name without the extension equals the parent directory's name                                |
+| `NAMESPACE_DIR`                    | Directories whose name starts with a lowercase letter and that directly contain no file of the same name |
+| `TEST_DIR`                         | Anything under a `__test__` directory                                                                    |
+| `TEST_FILE`                        | `*.test.ts`, `*.test.tsx`, `*.test.js`, and `*.test.jsx`                                                 |
+| `PRIVATE`                          | Files and directories whose name starts with `_`                                                         |
+| `DEFAULT_IGNORE`                   | The default of `ignore`                                                                                  |
+| `DEFAULT_INCLUDE`                  | The default of `include`                                                                                 |
+| `DEFAULT_EXCLUDE`                  | The default of `exclude`                                                                                 |
+| `DEFAULT_EXPORT_ALL`               | The default of `exportAll`                                                                               |
+| `DEFAULT_EXPORT_ALL_AS`            | The default of `exportAllAs`                                                                             |
+| `DEFAULT_EXPORT_DEFAULT`           | The default of `exportDefault`                                                                           |
+| `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | The default of `exportDefaultAndNamed`                                                                   |
+| `DEFAULT_EXPORT_TYPE_ALL`          | The default of `exportTypeAll`                                                                           |
 
 To add a condition to a default, combine it with the constants.
 
 ```ts
 import {
   DEFAULT_EXCLUDE,
-  TEST_FILE,
+  NAMESPACE_DIR,
 } from '@fringeworks/dev/generateIndexFiles/constants';
 
-generateIndexFiles({ exclude: [...DEFAULT_EXCLUDE, TEST_FILE] });
+// Leave a directory out of the exports
+generateIndexFiles({
+  exclude: [...DEFAULT_EXCLUDE, { valueType: 'path', conditions: 'src/css' }],
+});
+
+// Export lowercase directories as namespaces (export * as name)
+generateIndexFiles({ exportAllAs: [NAMESPACE_DIR] });
 ```
 
 ### `createExports`

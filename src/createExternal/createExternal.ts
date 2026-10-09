@@ -1,5 +1,5 @@
-import isMatchingPath from '../isMatchingPath';
-import type { CreateExternalOptions, ExternalFunction } from './types';
+import isMatchingPath from "../isMatchingPath";
+import type { CreateExternalOptions, ExternalFunction } from "./types";
 
 /**
  * rolldownやrollupなどで内部モジュールのimport以外をexternalとして扱うための関数を作る関数
@@ -30,9 +30,9 @@ export default function createExternal(
     } else if (!isResolved) {
       // 相対パスでもなく、srcディレクトリ配下でもないものは外部モジュール扱い
       return (
-        !source.startsWith('.') &&
-        !source.startsWith('/') &&
-        !source.startsWith('src/')
+        !source.startsWith(".") &&
+        !source.startsWith("/") &&
+        !source.startsWith("src/")
       );
     }
     return;

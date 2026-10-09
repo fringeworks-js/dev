@@ -1,1 +1,1 @@
-export { default } from './checkExistence';
+export { default as checkExistence, default } from "./checkExistence";

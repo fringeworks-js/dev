@@ -1,7 +1,7 @@
 import type {
   ConditionFnOptions,
   IsMatchingPathCondition,
-} from '../isMatchingPath';
+} from "../isMatchingPath";
 
 export type IsIncludedPathOptions<
   O extends ConditionFnOptions = ConditionFnOptions,
@@ -10,7 +10,7 @@ export type IsIncludedPathOptions<
    * 対象の種別
    * @default 'file'
    */
-  itemType?: 'file' | 'dir' | 'both';
+  itemType?: "file" | "dir" | "both";
 
   /**
    * 対象とする条件

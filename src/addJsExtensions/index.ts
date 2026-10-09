@@ -1,1 +1,1 @@
-export { default } from './addJsExtensions';
+export { default as addJsExtensions, default } from "./addJsExtensions";

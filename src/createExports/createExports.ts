@@ -1,18 +1,18 @@
-import fs from 'fs-extra';
-import { posix as path } from 'path';
-import type { PackageJson } from 'type-fest';
-import createExportEntry from '../_internal/createExportEntry';
-import { DEFAULT_EXCLUDE } from '../constants';
-import type { IsMatchingPathCondition } from '../isMatchingPath';
-import isMatchingPath from '../isMatchingPath';
-import type { CreateExportsOptions } from './types';
+import fs from "fs-extra";
+import { posix as path } from "path";
+import type { PackageJson } from "type-fest";
+import createExportEntry from "../_internal/createExportEntry";
+import { DEFAULT_EXCLUDE } from "../constants";
+import type { IsMatchingPathCondition } from "../isMatchingPath";
+import isMatchingPath from "../isMatchingPath";
+import type { CreateExportsOptions } from "./types";
 
 /**
  * indexファイル
  */
 const INDEX: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
+  valueType: "base",
+  entryType: "file",
   conditions: /^index\.(ts|tsx)$/i,
 };
 
@@ -29,9 +29,9 @@ export default function createExports(
   options: CreateExportsOptions = {},
 ): Record<string, PackageJson.Exports> {
   const {
-    srcPath = 'src',
-    target = 'src',
-    prefix = target === 'src' ? `./${path.normalize(srcPath)}/` : './',
+    srcPath = "src",
+    target = "src",
+    prefix = target === "src" ? `./${path.normalize(srcPath)}/` : "./",
     include = [],
     exclude = DEFAULT_EXCLUDE,
     extraExports = {},
@@ -47,7 +47,7 @@ export default function createExports(
 
   const exports: Record<string, PackageJson.Exports> = {};
   for (const { key, file } of modules) {
-    if (target === 'src') {
+    if (target === "src") {
       exports[key] = prefix + file;
     } else {
       const { dir, name } = path.parse(file);
@@ -71,7 +71,7 @@ function _collect(
   dirPath: string,
   include: IsMatchingPathCondition[],
   exclude: IsMatchingPathCondition[],
-  current: string = '',
+  current: string = "",
 ) {
   const items = fs.readdirSync(dirPath);
   items.sort();
@@ -90,7 +90,7 @@ function _collect(
       const keyPath = isMatchingPath(itemPath, INDEX)
         ? current
         : path.join(current, path.parse(item).name);
-      modules.push({ key: keyPath ? `./${keyPath}` : '.', file });
+      modules.push({ key: keyPath ? `./${keyPath}` : ".", file });
     }
   }
 

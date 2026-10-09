@@ -1,8 +1,8 @@
-import type { IsIncludedPathOptions } from '../isIncludedPath';
+import type { IsIncludedPathOptions } from "../isIncludedPath";
 
 export type MoveFilesToSubdirsOptions = Omit<
   IsIncludedPathOptions,
-  'itemType'
+  "itemType"
 > & {
   /**
    * ファイル毎の後処理

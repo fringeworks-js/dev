@@ -1,8 +1,8 @@
-import fs from 'fs-extra';
-import path from 'path';
-import { reduce } from 'remeda';
-import checkExistence from '../checkExistence';
-import type { InstallFromLocalOptions } from './types';
+import fs from "fs-extra";
+import path from "path";
+import { reduce } from "remeda";
+import checkExistence from "../checkExistence";
+import type { InstallFromLocalOptions } from "./types";
 
 /**
  * ローカルに配置されたパッケージを差し替える
@@ -14,8 +14,8 @@ export default function installFromLocal(
   options: InstallFromLocalOptions = {},
 ) {
   const {
-    packageJsonPath = './package.json',
-    nodeModulesPath = './node_modules',
+    packageJsonPath = "./package.json",
+    nodeModulesPath = "./node_modules",
     dryRun,
   } = options;
   const resolvedLocalNodeModulesPath = path.resolve(localNodeModulesPath);

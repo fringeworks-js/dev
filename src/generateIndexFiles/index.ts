@@ -1,2 +1,2 @@
-export { default } from './generateIndexFiles';
-export type * from './types';
+export { default as generateIndexFiles, default } from "./generateIndexFiles";
+export type * from "./types";

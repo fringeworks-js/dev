@@ -37,10 +37,6 @@ export default defineConfig({
             import: './constants.mjs',
             require: './constants.cjs',
           },
-          './*/constants': {
-            import: './*/constants.mjs',
-            require: './*/constants.cjs',
-          },
         },
       },
       resolveWorkspaceDeps: true,

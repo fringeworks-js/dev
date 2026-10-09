@@ -1,9 +1,9 @@
-import fg from 'fast-glob';
-import fs from 'fs-extra';
+import fg from "fast-glob";
+import fs from "fs-extra";
 
 const PATTERNS = {
-  '.js': /(?:from|import)\s*["'](\.\.?\/[^"']+)["']/g,
-  '.cjs': /require\(["'](\.\.?\/[^"']+)["']\)/g,
+  ".js": /(?:from|import)\s*["'](\.\.?\/[^"']+)["']/g,
+  ".cjs": /require\(["'](\.\.?\/[^"']+)["']\)/g,
 };
 
 /**
@@ -13,8 +13,8 @@ const PATTERNS = {
 export default async function addJsExtensions(dir: string) {
   const files = await fg(`${dir}/**/*.{js,cjs}`);
   for (const file of files) {
-    const content = await fs.readFile(file, 'utf-8');
-    const ext = file.endsWith('.cjs') ? '.cjs' : '.js';
+    const content = await fs.readFile(file, "utf-8");
+    const ext = file.endsWith(".cjs") ? ".cjs" : ".js";
     const fixed = content.replace(PATTERNS[ext], (match, pos1) => {
       if (pos1.endsWith(ext)) {
         // 既に拡張子あり

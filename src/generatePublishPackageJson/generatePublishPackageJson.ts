@@ -1,18 +1,18 @@
-import fs from 'fs-extra';
-import createExportEntry from '../_internal/createExportEntry';
-import type { GeneratePublishPackageJsonOptions } from './types';
+import fs from "fs-extra";
+import createExportEntry from "../_internal/createExportEntry";
+import type { GeneratePublishPackageJsonOptions } from "./types";
 
 async function generatePublishPackageJson(
   options: GeneratePublishPackageJsonOptions = {},
 ) {
   const {
-    packageJsonPath = './package.json',
-    outputPackageJsonPath = './dist/package.json',
+    packageJsonPath = "./package.json",
+    outputPackageJsonPath = "./dist/package.json",
     exports = {
-      '.': createExportEntry('./index'),
-      './*': createExportEntry('./*/index'),
-      './constants': createExportEntry('./constants'),
-      './*/constants': createExportEntry('./*/constants'),
+      ".": createExportEntry("./index"),
+      "./*": createExportEntry("./*/index"),
+      "./constants": createExportEntry("./constants"),
+      "./*/constants": createExportEntry("./*/constants"),
     },
     transform = (pkgJson) => pkgJson,
     jsonReadOptions,

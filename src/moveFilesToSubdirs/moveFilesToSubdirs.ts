@@ -1,7 +1,7 @@
-import fs from 'fs-extra';
-import path from 'path';
-import isIncludedPath from '../isIncludedPath';
-import type { MoveFilesToSubdirsOptions } from './types';
+import fs from "fs-extra";
+import path from "path";
+import isIncludedPath from "../isIncludedPath";
+import type { MoveFilesToSubdirsOptions } from "./types";
 
 /**
  * 対象のディレクトリ直下のファイルを、拡張子を除いた同名のサブディレクトリ直下に移動する
@@ -28,7 +28,7 @@ export default function moveFilesToSubdirs(
           path.join(subdirPath, `index${ext}`),
           `export { default } from './${name}';`,
           {
-            encoding: 'utf8',
+            encoding: "utf8",
           },
         );
       }

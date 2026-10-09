@@ -13,17 +13,17 @@ export type ExportEntryExtensions = {
  * 条件付きexportsの値
  */
 export type ExportEntry = Partial<
-  Record<'import' | 'require', string | { types: string; default: string }>
+  Record<"import" | "require", string | { types: string; default: string }>
 >;
 
 /**
  * 拡張子のデフォルト値（tsdownでESMとCJSを出力した際のファイル）
  */
 export const DEFAULT_EXPORT_ENTRY_EXTENSIONS = {
-  importExtension: '.mjs',
-  requireExtension: '.cjs',
-  importTypesExtension: '.d.mts',
-  requireTypesExtension: '.d.cts',
+  importExtension: ".mjs",
+  requireExtension: ".cjs",
+  importTypesExtension: ".d.mts",
+  requireTypesExtension: ".d.cts",
 } as const satisfies ExportEntryExtensions;
 
 /**
@@ -43,8 +43,8 @@ export default function createExportEntry(
   } = { ...DEFAULT_EXPORT_ENTRY_EXTENSIONS, ...extensions };
   const entry: ExportEntry = {};
   const conditions = [
-    ['import', importExtension, importTypesExtension],
-    ['require', requireExtension, requireTypesExtension],
+    ["import", importExtension, importTypesExtension],
+    ["require", requireExtension, requireTypesExtension],
   ] as const;
   for (const [condition, extension, typesExtension] of conditions) {
     if (extension === false) {
