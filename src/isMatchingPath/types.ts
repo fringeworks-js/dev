@@ -33,9 +33,11 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
      * - name: 拡張子を除いたディレクトリ名 or ファイル名
      * - ext: '.'を含む拡張子。拡張子が無い場合は空文字
      * - dirpath: '/'で区切られた親ディレクトリのフルパス
-     * - base: 拡張子付きの親ディレクトリ名
-     * - name: 拡張子を除いた親ディレクトリ名
-     * - ext: '.'を含む親ディレクトリの拡張子。拡張子が無い場合は空文字
+     * - dirbase: 拡張子付きの親ディレクトリ名
+     * - dirname: 拡張子を除いた親ディレクトリ名
+     * - dirext: '.'を含む親ディレクトリの拡張子。拡張子が無い場合は空文字
+     *
+     * @default 'path'
      */
     valueType?:
       | 'path'
@@ -53,6 +55,8 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
      * - dir: ディレクトリ
      * - file: ファイル
      * - both: ディレクトリ & ファイル
+     *
+     * @default 'both'
      */
     entryType?: 'dir' | 'file' | 'both';
 
@@ -60,7 +64,7 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
      * 一致条件
      * 配列で指定した場合はand条件とする
      *
-     * - string: 指定された文字列を含むものに一致
+     * - string: 指定された文字列を含むものに部分一致
      * - RegExp: 指定された正規表現に一致
      */
     conditions:

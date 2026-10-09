@@ -1,6 +1,6 @@
 import type { IsMatchingPathCondition } from '../isMatchingPath';
 
-export type IndexesOptions = {
+export type GenerateIndexFilesOptions = {
   /**
    * 処理対象のパス\
    * @default `src`
@@ -14,7 +14,12 @@ export type IndexesOptions = {
   indexFileName?: string;
 
   /**
-   * indexファイルを作る対象\
+   * indexファイルを作らないディレクトリ
+   */
+  ignore?: IsMatchingPathCondition[];
+
+  /**
+   * indexファイルに入れる対象\
    * 未指定の場合は下記の条件がデフォルトで適用される
    *
    * - ファイル名が`_`で始まらず拡張子が`.ts`,`.tsx`,`.js`,`.jsx`のもの
@@ -23,7 +28,8 @@ export type IndexesOptions = {
   include?: IsMatchingPathCondition[];
 
   /**
-   * indexファイルを作る対象から除外するもの
+   * indexファイルに入れる対象から除外するもの
+   * includeに一致してもindexファイルに入れたくないものがある場合に指定する
    */
   exclude?: IsMatchingPathCondition[];
 

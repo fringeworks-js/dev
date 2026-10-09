@@ -1,32 +1,16 @@
 import fs from 'fs-extra';
+import { CONSTANTS, TS_JS, TYPES } from '../constants';
 import type { IsMatchingPathCondition } from '../isMatchingPath';
 
-/**
- * types.ts
- */
-export const TYPES: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
-  conditions: /^types.ts$/i,
-};
-
-/**
- * constants.ts
- */
-export const CONSTANTS: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
-  conditions: /^constants.(ts|tsx)$/i,
-};
-
-/**
- * TypeScriptとJavaScript
- */
-export const TS_JS: IsMatchingPathCondition = {
-  valueType: 'base',
-  entryType: 'file',
-  conditions: /.+\.(ts|tsx|js|jsx)$/i,
-};
+export {
+  CONSTANTS,
+  DEFAULT_EXCLUDE,
+  PRIVATE,
+  TEST_DIR,
+  TEST_FILE,
+  TS_JS,
+  TYPES,
+} from '../constants';
 
 /**
  * 配下にindexファイルのあるディレクトリ
@@ -45,30 +29,6 @@ export const HAS_INDEX_DIR: IsMatchingPathCondition = {
 };
 
 /**
- * テストディレクトリ配下
- */
-export const TEST_DIR: IsMatchingPathCondition = {
-  valueType: 'path',
-  conditions: /.+\/__test__\/.+/i,
-};
-
-/**
- * ファイル名またはディレクトリ名が`_`で始まる
- */
-export const TEST_FILE: IsMatchingPathCondition = {
-  valueType: 'base',
-  conditions: /.*\.test\.(ts|tsx|js|jsx)$/i,
-};
-
-/**
- * ファイル名またはディレクトリ名が`_`で始まる
- */
-export const PRIVATE: IsMatchingPathCondition = {
-  valueType: 'base',
-  conditions: /^_/,
-};
-
-/**
  * 拡張子を除いたファイル名が親ディレクトリ名と同じ
  */
 export const MAIN_FILE: IsMatchingPathCondition = {
@@ -79,9 +39,9 @@ export const MAIN_FILE: IsMatchingPathCondition = {
 };
 
 /**
- * ツール類の入ったディレクトリ
+ * 名前空間としてまとめてexportするディレクトリ（`export * as name`）
  */
-export const TOOLS_DIR: IsMatchingPathCondition = {
+export const NAMESPACE_DIR: IsMatchingPathCondition = {
   entryType: 'dir',
   conditions: (values, { children }) => {
     const { base } = values;
@@ -105,16 +65,6 @@ export const DEFAULT_INCLUDE = [
 ];
 
 /**
- * excludeのデフォルト値
- */
-export const DEFAULT_EXCLUDE = [
-  // __test__フォルダ配下の全てを除外
-  TEST_DIR,
-  // ディレクトリ名、ファイル名が_で始まるものを除外
-  PRIVATE,
-];
-
-/**
  * exportTypeAllのデフォルト値
  */
 export const DEFAULT_EXPORT_TYPE_ALL = [TYPES];
@@ -132,4 +82,4 @@ export const DEFAULT_EXPORT_DEFAULT = [MAIN_FILE];
 /**
  * exportAllAsのデフォルト値
  */
-export const DEFAULT_EXPORT_ALL_AS = [TOOLS_DIR];
+export const DEFAULT_EXPORT_ALL_AS = [NAMESPACE_DIR];

@@ -1,4 +1,4 @@
-export type VerOptions = {
+export type SetVersionOptions = {
   /**
    * ワークスペースのパッケージjsonのパス
    * @default `./package.json`

@@ -1,4 +1,5 @@
 import fs from 'fs-extra';
+import createExportEntry from '../_internal/createExportEntry';
 import type { GeneratePublishPackageJsonOptions } from './types';
 
 async function generatePublishPackageJson(
@@ -8,26 +9,10 @@ async function generatePublishPackageJson(
     packageJsonPath = './package.json',
     outputPackageJsonPath = './dist/package.json',
     exports = {
-      '.': {
-        import: './index.js',
-        reqire: './index.cjs',
-        type: './index.d.ts',
-      },
-      './*': {
-        import: './*/index.js',
-        reqire: './*/index.cjs',
-        type: './*/index.d.ts',
-      },
-      './constants': {
-        import: './constants.js',
-        reqire: './constants.cjs',
-        type: './constants.d.ts',
-      },
-      './*/constants': {
-        import: './*/constants.js',
-        reqire: './*/constants.cjs',
-        type: './*/constants.d.ts',
-      },
+      '.': createExportEntry('./index'),
+      './*': createExportEntry('./*/index'),
+      './constants': createExportEntry('./constants'),
+      './*/constants': createExportEntry('./*/constants'),
     },
     transform = (pkgJson) => pkgJson,
     jsonReadOptions,

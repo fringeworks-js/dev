@@ -10,7 +10,7 @@ import {
   DEFAULT_EXPORT_TYPE_ALL,
   DEFAULT_INCLUDE,
 } from './constants';
-import type { IndexesOptions } from './types';
+import type { GenerateIndexFilesOptions } from './types';
 
 const EXPORTS = {
   exportAll: {
@@ -41,10 +41,13 @@ const EXPORTS = {
  * 対象ファイルで出力形式が特に指定されていない場合は下記の形式で出力\
  * `export { default as ${name} } from './${name}';`
  */
-export default function indexes(options: IndexesOptions = {}) {
+export default function generateIndexFiles(
+  options: GenerateIndexFilesOptions = {},
+) {
   const {
     srcPath = 'src',
     indexFileName = 'index.ts',
+    ignore = [],
     include = DEFAULT_INCLUDE,
     exclude = DEFAULT_EXCLUDE,
     exportAll = DEFAULT_EXPORT_ALL,
@@ -58,8 +61,9 @@ export default function indexes(options: IndexesOptions = {}) {
   const indexRegex = _createRegex(indexFileName);
 
   // indexファイルの作成処理を実行
-  _indexes(srcPath, indexRegex, {
+  _generateIndexFiles(srcPath, indexRegex, {
     indexFileName,
+    ignore,
     include,
     exclude,
     exportAll,
@@ -72,13 +76,14 @@ export default function indexes(options: IndexesOptions = {}) {
   });
 }
 
-function _indexes(
+function _generateIndexFiles(
   targetPath: string,
   indexRegex: RegExp,
-  options: IndexesOptions,
+  options: GenerateIndexFilesOptions,
 ) {
   const {
     indexFileName,
+    ignore,
     include,
     exclude,
     includeNamedWithDefault,
@@ -115,9 +120,12 @@ function _indexes(
     const stat = fs.statSync(itemPath);
 
     let children;
-    if (stat.isDirectory()) {
+    if (
+      stat.isDirectory() &&
+      !isMatchingPath(itemPath, ignore, { conditionOptions: { indexRegex } })
+    ) {
       // ディレクトリの場合は先に子要素を処理
-      children = _indexes(itemPath, indexRegex, options);
+      children = _generateIndexFiles(itemPath, indexRegex, options);
     }
     const isMatchingPathOptions = {
       conditionOptions: { indexRegex, children },

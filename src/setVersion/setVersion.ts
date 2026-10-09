@@ -1,13 +1,16 @@
 import fs from 'fs-extra';
 import path from 'path';
-import type { VerOptions } from './types';
+import type { SetVersionOptions } from './types';
 
 /**
  * ワークスペースのパッケージにバージョンを反映する
  * @param version バージョン
  * @param options オプション
  */
-export default async function ver(version: string, options: VerOptions = {}) {
+export default async function setVersion(
+  version: string,
+  options: SetVersionOptions = {},
+) {
   const {
     workspacePackageJsonPath = 'package.json',
     packagesPath = 'packages',

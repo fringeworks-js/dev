@@ -1,7 +1,8 @@
 {
   "name": "@fringeworks/dev",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
+  "description": "A library some will find handy, built for developers.",
   "keywords": [
     "utils"
   ],
@@ -14,6 +15,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./constants": "./src/constants.ts",
     "./*": "./src/*/index.ts",
     "./*/constants": "./src/*/constants.ts"
   },

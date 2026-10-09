@@ -1,16 +1,13 @@
 import isMatchingPath from '../isMatchingPath';
-import type {
-  CreateExternalOptionFunctionOptions,
-  ExternalOptionFunction,
-} from './types';
+import type { CreateExternalOptions, ExternalFunction } from './types';
 
 /**
  * rolldownやrollupなどで内部モジュールのimport以外をexternalとして扱うための関数を作る関数
  * @param options
  */
-export default function createExternalOptionFunction(
-  options: CreateExternalOptionFunctionOptions = {},
-): ExternalOptionFunction {
+export default function createExternal(
+  options: CreateExternalOptions = {},
+): ExternalFunction {
   const { isExternal, isInternal } = options;
   return (
     source: string,

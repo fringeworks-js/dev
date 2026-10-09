@@ -15,29 +15,15 @@ export type GeneratePublishPackageJsonOptions = {
   outputPackageJsonPath?: string;
 
   /**
-   * exportsに設定する値
+   * exportsに設定する値\
+   * 既定値は`.`,`./*`,`./constants`,`./*\/constants`の4つで、それぞれ下記の形式
    * @default
    * {
    *   '.': {
-   *     import: './index.js',
-   *     reqire: './index.cjs',
-   *     type: './index.d.ts',
+   *     import: { types: './index.d.mts', default: './index.mjs' },
+   *     require: { types: './index.d.cts', default: './index.cjs' },
    *   },
-   *   './*': {
-   *     import: './*\/index.js',
-   *     reqire: './*\/index.cjs',
-   *     type: './*\/index.d.ts',
-   *   },
-   *   './constants': {
-   *     import: './constants.js',
-   *     reqire: './constants.cjs',
-   *     type: './constants.d.ts',
-   *   },
-   *   './*\/constants': {
-   *     import: './*\/constants.js',
-   *     reqire: './*\/constants.cjs',
-   *     type: './*\/constants.d.ts',
-   *   },
+   *   ...
    * }
    */
   exports?: PackageJson['exports'];

@@ -1,7 +1,7 @@
 import fs, { Stats } from 'fs-extra';
 import type { ConditionFnOptions } from '../isMatchingPath';
 import isMatchingPath from '../isMatchingPath';
-import type { IsTargetPathOptions } from './types';
+import type { IsIncludedPathOptions } from './types';
 
 const IS_TARGET_TYPE = {
   file: (stat: Stats) => stat.isFile(),
@@ -9,9 +9,9 @@ const IS_TARGET_TYPE = {
   both: (stat: Stats) => stat.isFile() || stat.isDirectory(),
 } as const;
 
-export default async function isTargetPath<
+export default function isIncludedPath<
   O extends ConditionFnOptions = ConditionFnOptions,
->(itemPath: string, options: IsTargetPathOptions<O> = {}) {
+>(itemPath: string, options: IsIncludedPathOptions<O> = {}) {
   const {
     itemType = 'file',
     defaultInclude,

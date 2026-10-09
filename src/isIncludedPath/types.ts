@@ -3,7 +3,7 @@ import type {
   IsMatchingPathCondition,
 } from '../isMatchingPath';
 
-export type IsTargetPathOptions<
+export type IsIncludedPathOptions<
   O extends ConditionFnOptions = ConditionFnOptions,
 > = {
   /**

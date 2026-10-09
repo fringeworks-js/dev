@@ -3,7 +3,7 @@ import type { IsMatchingPathCondition } from '../isMatchingPath';
 /**
  * オプション
  */
-export type CreateExternalOptionFunctionOptions = {
+export type CreateExternalOptions = {
   /**
    * 外部モジュールとする条件
    */
@@ -18,7 +18,7 @@ export type CreateExternalOptionFunctionOptions = {
 /**
  * rolldownやrollupのexternalオプションに設定可能な関数
  */
-export type ExternalOptionFunction = (
+export type ExternalFunction = (
   source: string,
   importer: string | undefined,
   isResolved: boolean,

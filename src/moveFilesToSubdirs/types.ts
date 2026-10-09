@@ -1,6 +1,9 @@
-import type { IsTargetPathOptions } from '../isTargetPath';
+import type { IsIncludedPathOptions } from '../isIncludedPath';
 
-export type MoveFilesToSubdirOptions = Omit<IsTargetPathOptions, 'itemType'> & {
+export type MoveFilesToSubdirsOptions = Omit<
+  IsIncludedPathOptions,
+  'itemType'
+> & {
   /**
    * ファイル毎の後処理
    * @param subdirPath サブディレクトリのパス
