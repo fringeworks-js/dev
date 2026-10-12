@@ -42,9 +42,9 @@ export default function installFromLocal(
     {},
   );
 
-  for (const packageName in localPackages) {
+  for (const [packageName, localPath] of Object.entries(localPackages)) {
     // ローカルパッケージの確認
-    const localPackagePath = path.resolve(localPackages[packageName]);
+    const localPackagePath = path.resolve(localPath);
     if (fs.existsSync(localPackagePath)) {
       // ローカルパッケージがある場合のみ処理
       const installedPackagePath = path.resolve(nodeModulesPath, packageName);

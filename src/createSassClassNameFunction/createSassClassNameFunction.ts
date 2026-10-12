@@ -14,6 +14,6 @@ export default function createSassClassNameFunction(
   const { prefix = '', suffix = '' } = options;
   return (args: Value[]) => {
     const name = (args[0] as SassString).text;
-    return new SassString(classNames[prefix + name + suffix]);
+    return new SassString(classNames[prefix + name + suffix] ?? '');
   };
 }

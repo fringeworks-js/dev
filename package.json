@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/dev",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "private": true,
   "description": "A library some will find handy, built for developers.",
   "keywords": [
@@ -29,7 +29,8 @@
     "./moveFilesToSubdirs": "./src/moveFilesToSubdirs/index.ts",
     "./removeFiles": "./src/removeFiles/index.ts",
     "./setVersion": "./src/setVersion/index.ts",
-    "./writeExports": "./src/writeExports/index.ts"
+    "./writeExports": "./src/writeExports/index.ts",
+    "./tsconfig.base.json": "./tsconfig.base.json"
   },
   "main": "./src/index.ts",
   "module": "./src/index.ts",
@@ -46,8 +47,7 @@
   "dependencies": {
     "fs-extra": "^11.3.4",
     "remeda": "^2.33.6",
-    "sass": "^1.99.0",
-    "tslib": "^2.8.1"
+    "sass": "^1.99.0"
   },
   "devDependencies": {
     "@fringeworks/rollup-plugin-dist-package": "^0.8.1",

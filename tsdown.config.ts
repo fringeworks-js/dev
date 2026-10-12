@@ -37,6 +37,8 @@ export default defineConfig({
             import: './constants.mjs',
             require: './constants.cjs',
           },
+          // 各パッケージの tsconfig.json から extends する共通の設定
+          './tsconfig.base.json': './tsconfig.base.json',
         },
       },
       resolveWorkspaceDeps: true,
@@ -45,7 +47,7 @@ export default defineConfig({
     copy({
       targets: [
         {
-          src: ['LICENSE', 'README.md', 'README.ja.md'],
+          src: ['LICENSE', 'README.md', 'README.ja.md', 'tsconfig.base.json'],
           dest: 'dist',
         },
       ],

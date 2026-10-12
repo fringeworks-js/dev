@@ -109,6 +109,19 @@ sass.compile('style.scss', {
 }
 ```
 
+### 共通の tsconfig
+
+`@fringeworks` のパッケージで共通に使っている TypeScript の設定を `tsconfig.base.json` として同梱しています。`extends` で読み込み、パッケージごとの差分だけを書き足します。
+
+```json
+{
+  "extends": "@fringeworks/dev/tsconfig.base.json",
+  "include": ["src", "globals.d.ts"]
+}
+```
+
+ビルドはバンドラー（tsdown など）が行い、tsc は型チェックだけに使う前提の設定です（`noEmit: true`）。`strict` に加えて `noUncheckedIndexedAccess`・`noImplicitOverride`・`noImplicitReturns` などを有効にしています。`include` などのパスを含む設定は、読み込む側の位置を基準にできないため含めていません。
+
 ## API
 
 | 関数                                                | 説明                                                                 |

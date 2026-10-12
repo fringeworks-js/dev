@@ -109,6 +109,19 @@ sass.compile('style.scss', {
 }
 ```
 
+### Shared tsconfig
+
+The TypeScript settings shared by the `@fringeworks` packages are included as `tsconfig.base.json`. Load it with `extends` and add only the differences for each package.
+
+```json
+{
+  "extends": "@fringeworks/dev/tsconfig.base.json",
+  "include": ["src", "globals.d.ts"]
+}
+```
+
+The settings assume that a bundler (tsdown and so on) builds the package and tsc only type-checks it (`noEmit: true`). In addition to `strict`, they enable `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns` and more. Settings with paths such as `include` are not included, because they cannot be resolved relative to the package that loads them.
+
 ## API
 
 | Function                                            | Description                                                                   |

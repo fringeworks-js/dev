@@ -125,7 +125,7 @@ export default function generateIndexFiles(
 function _generateIndexFiles(
   targetPath: string,
   indexRegex: RegExp,
-  options: GenerateIndexFilesOptions,
+  options: GenerateIndexFilesOptions & { indexFileName: string },
 ): PrivateGenerateIndexFilesResult {
   const {
     indexFileName,
@@ -168,7 +168,7 @@ function _generateIndexFiles(
     const { name } = path.posix.parse(itemPath);
     const stat = fs.statSync(itemPath);
 
-    let dirResult: PrivateGenerateIndexFilesResult;
+    let dirResult: PrivateGenerateIndexFilesResult | undefined;
     if (
       stat.isDirectory() &&
       !isMatchingPath(itemPath, ignore, { conditionOptions: { indexRegex } })

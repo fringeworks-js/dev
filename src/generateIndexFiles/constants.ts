@@ -47,7 +47,7 @@ export const NAMESPACE_DIR: IsMatchingPathCondition = {
     const { base } = values;
     return (
       // 先頭が小文字
-      base[0] === base[0].toLowerCase() &&
+      base.charAt(0) === base.charAt(0).toLowerCase() &&
       // 子要素にディレクトリと同じ名称のファイルが無い
       children?.every((child: string) => child.split('.')[0] !== base)
     );
