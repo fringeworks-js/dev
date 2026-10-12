@@ -52,7 +52,7 @@ produces the following index files. Directories and files whose name starts with
 ```ts
 // src/number/keepInRange/index.ts
 export * from './constants';
-export { default as keepInRange, default } from './keepInRange';
+export { default, default as keepInRange } from './keepInRange';
 export type * from './types';
 
 // src/number/index.ts
@@ -150,7 +150,7 @@ No index file is generated in a directory that has nothing to export.
 | `exportAll?`               | `IsMatchingPathCondition[]`       | What to export as `export * from './name';`. Defaults to `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                  |
 | `exportAllAs?`             | `IsMatchingPathCondition[]`       | What to export as `export * as name from './name';`. Defaults to `[]`                                                                                                                  |
 | `exportDefault?`           | `IsMatchingPathCondition[]`       | What to export as `export { default } from './name';`. Defaults to `[]`                                                                                                                |
-| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | What to export as `export { default as name, default } from './name';`. Defaults to `[MAIN_FILE]`                                                                                      |
+| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | What to export as `export { default, default as name } from './name';`. Defaults to `[MAIN_FILE]`                                                                                      |
 | `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | What to export as `export { default as name } from './name';`                                                                                                                          |
 | `exportTypeAll?`           | `IsMatchingPathCondition[]`       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                                                                |
 | `dryRun?`                  | `boolean`                         | Prints the generated content to the console instead of writing files                                                                                                                   |

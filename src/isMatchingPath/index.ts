@@ -1,2 +1,2 @@
-export { default as isMatchingPath, default } from "./isMatchingPath";
-export type * from "./types";
+export { default, default as isMatchingPath } from './isMatchingPath';
+export type * from './types';

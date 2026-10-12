@@ -1,1 +1,1 @@
-export { default as editJsonFile, default } from "./editJsonFile";
+export { default, default as editJsonFile } from './editJsonFile';

@@ -1,7 +1,7 @@
-import fs from "fs-extra";
-import os from "os";
-import { posix as path } from "path";
-import isMatchingPath from "../isMatchingPath";
+import fs from 'fs-extra';
+import os from 'os';
+import path from 'path';
+import isMatchingPath, { type IsMatchingPathOptions } from '../isMatchingPath';
 import {
   DEFAULT_EXCLUDE,
   DEFAULT_EXPORT_ALL,
@@ -11,8 +11,8 @@ import {
   DEFAULT_EXPORT_TYPE_ALL,
   DEFAULT_IGNORE,
   DEFAULT_INCLUDE,
-} from "./constants";
-import type { GenerateIndexFilesOptions } from "./types";
+} from './constants';
+import type { GenerateIndexFilesOptions } from './types';
 
 /**
  * exportの形式
@@ -25,40 +25,55 @@ import type { GenerateIndexFilesOptions } from "./types";
  */
 const EXPORTS = {
   exportAllAs: {
-    type: "named",
+    type: 'named',
     generate: (name: string) => `export * as ${name} from './${name}';`,
   },
   exportDefault: {
-    type: "default",
+    type: 'default',
     generate: (name: string) => `export { default } from './${name}';`,
   },
   exportDefaultAndNamed: {
-    type: "both",
+    type: 'both',
     // organize-importsで整形した場合と同じ順序で出力する
+    // export名を文字コード順で比較し、`default`より前の名前なら先に置く
     generate: (name: string) =>
-      `export { default as ${name}, default } from './${name}';`,
+      name < 'default'
+        ? `export { default as ${name}, default } from './${name}';`
+        : `export { default, default as ${name} } from './${name}';`,
     generateDefaultOnly: (name: string) =>
       `export { default } from './${name}';`,
   },
   exportDefaultAs: {
-    type: "named",
+    type: 'named',
     generate: (name: string) =>
       `export { default as ${name} } from './${name}';`,
   },
   exportTypeAll: {
-    type: "type",
+    type: 'type',
     generate: (name: string) => `export type * from './${name}';`,
   },
   exportAll: {
-    type: "named",
+    type: 'named',
     generate: (name: string) => `export * from './${name}';`,
   },
 } as const;
 
 type ExportCode = {
-  type: (typeof EXPORTS)[keyof typeof EXPORTS]["type"];
+  type: (typeof EXPORTS)[keyof typeof EXPORTS]['type'];
   code: string;
   defaultOnlyCode?: string;
+};
+
+type PrivateGenerateIndexFilesResult = {
+  /**
+   * 子要素のリスト
+   */
+  children: string[];
+
+  /**
+   * 出力したindexファイルのパス
+   */
+  indexPaths: string[];
 };
 
 /**
@@ -68,10 +83,10 @@ type ExportCode = {
  */
 export default function generateIndexFiles(
   options: GenerateIndexFilesOptions = {},
-) {
+): string[] {
   const {
-    srcPath = "src",
-    indexFileName = "index.ts",
+    srcPath = 'src',
+    indexFileName = 'index.ts',
     ignore = DEFAULT_IGNORE,
     include = DEFAULT_INCLUDE,
     exclude = DEFAULT_EXCLUDE,
@@ -82,13 +97,13 @@ export default function generateIndexFiles(
     exportDefaultAndNamed = DEFAULT_EXPORT_DEFAULT_AND_NAMED,
     exportTypeAll = DEFAULT_EXPORT_TYPE_ALL,
     eol = os.EOL,
-    encoding = "utf8",
+    encoding = 'utf8',
     ...rest
   } = options;
   const indexRegex = _createRegex(indexFileName);
 
   // indexファイルの作成処理を実行
-  _generateIndexFiles(srcPath, indexRegex, {
+  const result = _generateIndexFiles(srcPath, indexRegex, {
     indexFileName,
     ignore,
     include,
@@ -103,13 +118,15 @@ export default function generateIndexFiles(
     encoding,
     ...rest,
   });
+
+  return result.indexPaths;
 }
 
 function _generateIndexFiles(
   targetPath: string,
   indexRegex: RegExp,
   options: GenerateIndexFilesOptions,
-) {
+): PrivateGenerateIndexFilesResult {
   const {
     indexFileName,
     ignore,
@@ -145,21 +162,23 @@ function _generateIndexFiles(
   let hasDefaultExport = false;
   let hasNamedExport = false;
 
+  const indexPaths: string[] = [];
   for (const item of items) {
-    const itemPath = path.join(targetPath, item);
-    const { name } = path.parse(itemPath);
+    const itemPath = path.posix.join(targetPath, item);
+    const { name } = path.posix.parse(itemPath);
     const stat = fs.statSync(itemPath);
 
-    let children;
+    let dirResult: PrivateGenerateIndexFilesResult;
     if (
       stat.isDirectory() &&
       !isMatchingPath(itemPath, ignore, { conditionOptions: { indexRegex } })
     ) {
       // ディレクトリの場合は先に子要素を処理
-      children = _generateIndexFiles(itemPath, indexRegex, options);
+      dirResult = _generateIndexFiles(itemPath, indexRegex, options);
+      indexPaths.push(...dirResult.indexPaths);
     }
-    const isMatchingPathOptions = {
-      conditionOptions: { indexRegex, children },
+    const isMatchingPathOptions: IsMatchingPathOptions<object> = {
+      conditionOptions: { indexRegex, children: dirResult?.children },
     };
 
     if (
@@ -182,15 +201,15 @@ function _generateIndexFiles(
             type: EXPORT.type,
             code: EXPORT.generate(name),
             defaultOnlyCode:
-              "generateDefaultOnly" in EXPORT
+              'generateDefaultOnly' in EXPORT
                 ? EXPORT.generateDefaultOnly(name)
                 : undefined,
           });
           // exportの種類に応じたフラグを立てる
-          if (EXPORT.type === "named" || EXPORT.type === "both") {
+          if (EXPORT.type === 'named' || EXPORT.type === 'both') {
             hasNamedExport = true;
           }
-          if (EXPORT.type === "default" || EXPORT.type === "both") {
+          if (EXPORT.type === 'default' || EXPORT.type === 'both') {
             hasDefaultExport = true;
           }
           isExported = true;
@@ -213,9 +232,9 @@ function _generateIndexFiles(
     if (hasDefaultExport && hasNamedExport && !includeNamedWithDefault) {
       // デフォルトエクスポートと名前付きエクスポートの混在を許さない場合は名前付きエクスポートを除外
       exports = exportCodes.reduce<string[]>((result, exportCode) => {
-        if (exportCode.type === "both") {
+        if (exportCode.type === 'both') {
           result.push(exportCode.defaultOnlyCode!);
-        } else if (exportCode.type !== "named") {
+        } else if (exportCode.type !== 'named') {
           result.push(exportCode.code);
         }
         return result;
@@ -227,7 +246,7 @@ function _generateIndexFiles(
       exports = transform(exports);
     }
 
-    const indexPath = path.join(targetPath, indexFileName);
+    const indexPath = path.posix.join(targetPath, indexFileName);
     if (!dryRun) {
       // indexファイルの出力
       fs.writeFileSync(indexPath, exports.join(eol) + eol, {
@@ -235,17 +254,18 @@ function _generateIndexFiles(
       });
       console.info(indexPath);
     } else {
-      console.info(indexPath + "-------------------------------------");
+      console.info(indexPath + '-------------------------------------');
       console.info(exports.join(eol) + eol);
     }
+    indexPaths.push(path.resolve(indexPath));
   }
 
-  return items;
+  return { children: items, indexPaths };
 }
 
 function _createRegex(str: string) {
   return new RegExp(
-    `^${str.replace(/[.*+?^=!:${}()|\[\]\/\\]/g, "\\$&")}$`,
-    "i",
+    `^${str.replace(/[.*+?^=!:${}()|\[\]\/\\]/g, '\\$&')}$`,
+    'i',
   );
 }

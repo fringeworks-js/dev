@@ -1,2 +1,2 @@
-export { default as removeFiles, default } from "./removeFiles";
-export type * from "./types";
+export { default, default as removeFiles } from './removeFiles';
+export type * from './types';

@@ -52,7 +52,7 @@ src/
 ```ts
 // src/number/keepInRange/index.ts
 export * from './constants';
-export { default as keepInRange, default } from './keepInRange';
+export { default, default as keepInRange } from './keepInRange';
 export type * from './types';
 
 // src/number/index.ts
@@ -150,7 +150,7 @@ export する対象がないディレクトリには index ファイルを生成
 | `exportAll?`               | `IsMatchingPathCondition[]`       | `export * from './name';` で export するもの。既定値は `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                                |
 | `exportAllAs?`             | `IsMatchingPathCondition[]`       | `export * as name from './name';` で export するもの。既定値は `[]`                                                                                                                                |
 | `exportDefault?`           | `IsMatchingPathCondition[]`       | `export { default } from './name';` で export するもの。既定値は `[]`                                                                                                                              |
-| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | `export { default as name, default } from './name';` で export するもの。既定値は `[MAIN_FILE]`                                                                                                    |
+| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | `export { default, default as name } from './name';` で export するもの。既定値は `[MAIN_FILE]`                                                                                                    |
 | `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | `export { default as name } from './name';` で export するもの                                                                                                                                     |
 | `exportTypeAll?`           | `IsMatchingPathCondition[]`       | `export type * from './name';` で export するもの。既定値は `[TYPES]`                                                                                                                              |
 | `dryRun?`                  | `boolean`                         | ファイルを書き込まず、生成内容をコンソールに出力する                                                                                                                                               |
