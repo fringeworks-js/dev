@@ -36,11 +36,11 @@ export const TEST_DIR: IsMatchingPathCondition = {
 };
 
 /**
- * テストファイル
+ * テストファイル（型のテストの `*.test-d.ts` も含む）
  */
 export const TEST_FILE: IsMatchingPathCondition = {
   valueType: 'base',
-  conditions: /.*\.test\.(ts|tsx|js|jsx)$/i,
+  conditions: /.*\.test(-d)?\.(ts|tsx|js|jsx)$/i,
 };
 
 /**

@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     /* Environment */
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "target": "ES2021",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "types": ["node"],
     /* Modules (tsdown builds, tsc only type-checks) */
     "module": "ESNext",
