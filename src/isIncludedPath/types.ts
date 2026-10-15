@@ -1,16 +1,18 @@
 import type {
   ConditionFnOptions,
+  EntryType,
   IsMatchingPathCondition,
+  IsMatchingPathOptions,
 } from '../isMatchingPath';
 
 export type IsIncludedPathOptions<
   O extends ConditionFnOptions = ConditionFnOptions,
-> = {
+> = IsMatchingPathOptions<O> & {
   /**
    * 対象の種別
    * @default 'file'
    */
-  itemType?: 'file' | 'dir' | 'both';
+  entryType?: EntryType;
 
   /**
    * 対象とする条件

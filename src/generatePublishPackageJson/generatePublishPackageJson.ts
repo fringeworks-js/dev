@@ -1,8 +1,46 @@
 import fs from 'fs-extra';
+import { pick } from 'remeda';
+import type { PackageJson } from 'type-fest';
+import { assertExists } from '../_internal/assertPath';
 import createExportEntry from '../_internal/createExportEntry';
 import type { GeneratePublishPackageJsonOptions } from './types';
 
-async function generatePublishPackageJson(
+/**
+ * package.jsonから引き継ぐ項目
+ * `@fringeworks/rollup-plugin-dist-package`の既定値に合わせる
+ */
+const INHERIT_PROPS = [
+  'name',
+  'version',
+  'description',
+  'keywords',
+  'repository',
+  'bugs',
+  'homepage',
+  'author',
+  'contributors',
+  'license',
+  'type',
+  'engines',
+  'sideEffects',
+] as const;
+
+/**
+ * exportsの後に引き継ぐ依存関係の項目
+ */
+const DEPENDENCIES_PROPS = [
+  'dependencies',
+  'peerDependencies',
+  'peerDependenciesMeta',
+  'optionalDependencies',
+] as const;
+
+/**
+ * 公開用のpackage.jsonを生成する\
+ * `packageJsonPath`が存在しない場合は例外を投げる
+ * @param options オプション
+ */
+function generatePublishPackageJson(
   options: GeneratePublishPackageJsonOptions = {},
 ) {
   const {
@@ -11,29 +49,22 @@ async function generatePublishPackageJson(
     exports = {
       '.': createExportEntry('./index'),
       './*': createExportEntry('./*/index'),
-      './constants': createExportEntry('./constants'),
-      './*/constants': createExportEntry('./*/constants'),
     },
     transform = (pkgJson) => pkgJson,
     jsonReadOptions,
     jsonWriteOptions,
   } = options;
-  const packageJson = await fs.readJSON(packageJsonPath, jsonReadOptions);
-  const distPackageJson = {
-    name: packageJson.name,
-    version: packageJson.version,
-    keywords: packageJson.keywords,
-    repository: packageJson.repository,
-    license: packageJson.license,
-    author: packageJson.author,
-    type: packageJson.type,
+  assertExists(packageJsonPath);
+  const packageJson = fs.readJSONSync(packageJsonPath, jsonReadOptions);
+  const distPackageJson: PackageJson = {
+    ...pick(packageJson, INHERIT_PROPS),
     exports,
-    dependencies: packageJson.dependencies,
+    ...pick(packageJson, DEPENDENCIES_PROPS),
   };
-  await fs.writeJSON(
+  fs.outputJSONSync(
     outputPackageJsonPath,
     transform(distPackageJson),
-    jsonWriteOptions,
+    jsonWriteOptions ?? { spaces: 2 },
   );
 }
 

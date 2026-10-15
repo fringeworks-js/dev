@@ -6,6 +6,7 @@ import type { ParsedPath } from 'path';
  * - string: 指定された文字列がパスに含まれているものに一致する際にtrue
  * - RegExp: 指定された正規表現にパスが一致する際にtrue
  * - ConditionConfig: 条件設定に従って検査し一致したときにtrue
+ * - ConditionFn: 関数がtrueを返したときにtrue
  */
 export type IsMatchingPathCondition<
   O extends ConditionFnOptions = ConditionFnOptions,
@@ -51,14 +52,15 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
 
     /**
      * 検査対象の種別
+     * `dir`・`file`の場合、存在しないパスは一致しない
      *
      * - dir: ディレクトリ
      * - file: ファイル
-     * - both: ディレクトリ & ファイル
+     * - both: 種別を問わない（存在しないパスも対象）
      *
      * @default 'both'
      */
-    entryType?: 'dir' | 'file' | 'both';
+    entryType?: EntryType;
 
     /**
      * 一致条件
@@ -73,6 +75,15 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
       | ConditionFn<O>
       | (string | RegExp | ConditionFn<O>)[];
   };
+
+/**
+ * 検査対象の種別
+ *
+ * - dir: ディレクトリ
+ * - file: ファイル
+ * - both: ディレクトリ & ファイル
+ */
+export type EntryType = 'dir' | 'file' | 'both';
 
 /**
  * カスタム条件関数

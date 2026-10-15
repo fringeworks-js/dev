@@ -2,8 +2,7 @@ import fs from 'fs-extra';
 
 /**
  * ディレクトリ、ファイルの存在チェック
- * @param targetPaths
- * @param options
+ * @param targetPaths 確認するパス
  */
 export default function checkExistence(...targetPaths: string[]) {
   return targetPaths.every((targetPath) => {

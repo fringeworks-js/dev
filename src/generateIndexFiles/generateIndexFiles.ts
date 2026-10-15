@@ -1,6 +1,10 @@
 import fs from 'fs-extra';
-import os from 'os';
 import path from 'path';
+import { assertDirectory } from '../_internal/assertPath';
+import compareNames from '../_internal/compareNames';
+import type { ExportForm } from '../_internal/exportForms';
+import { EXPORT_FORMS, isIdentifierName } from '../_internal/exportForms';
+import toPosixPath from '../_internal/toPosixPath';
 import isMatchingPath, { type IsMatchingPathOptions } from '../isMatchingPath';
 import {
   DEFAULT_EXCLUDE,
@@ -15,53 +19,34 @@ import {
 import type { GenerateIndexFilesOptions } from './types';
 
 /**
- * exportの形式
- * 複数の形式の条件に一致した場合は、ここに定義した順で先に一致したものを使う\
+ * 条件を判定する順のexportの形式
+ * 複数の形式の条件に一致した場合は、先に一致したものを使う\
  * 範囲の広い`exportAll`は最後に判定し、個別の指定を優先する
- *
- * - type: exportの種類。デフォルトと名前付きの混在を判定するのに使う
- * - generate: exportのコード
- * - generateDefaultOnly: 名前付きエクスポートを除外する場合のコード
  */
-const EXPORTS = {
-  exportAllAs: {
-    type: 'named',
-    generate: (name: string) => `export * as ${name} from './${name}';`,
-  },
-  exportDefault: {
-    type: 'default',
-    generate: (name: string) => `export { default } from './${name}';`,
-  },
-  exportDefaultAndNamed: {
-    type: 'both',
-    // organize-importsで整形した場合と同じ順序で出力する
-    // export名を文字コード順で比較し、`default`より前の名前なら先に置く
-    generate: (name: string) =>
-      name < 'default'
-        ? `export { default as ${name}, default } from './${name}';`
-        : `export { default, default as ${name} } from './${name}';`,
-    generateDefaultOnly: (name: string) =>
-      `export { default } from './${name}';`,
-  },
-  exportDefaultAs: {
-    type: 'named',
-    generate: (name: string) =>
-      `export { default as ${name} } from './${name}';`,
-  },
-  exportTypeAll: {
-    type: 'type',
-    generate: (name: string) => `export type * from './${name}';`,
-  },
-  exportAll: {
-    type: 'named',
-    generate: (name: string) => `export * from './${name}';`,
-  },
-} as const;
+const EXPORT_FORM_ORDER = [
+  'exportAllAs',
+  'exportDefault',
+  'exportDefaultAndNamed',
+  'exportDefaultAs',
+  'exportTypeAll',
+  'exportAll',
+] as const satisfies readonly ExportForm[];
 
-type ExportCode = {
-  type: (typeof EXPORTS)[keyof typeof EXPORTS]['type'];
-  code: string;
-  defaultOnlyCode?: string;
+type ExportItem = {
+  /**
+   * exportの形式
+   */
+  form: ExportForm;
+
+  /**
+   * export名・モジュール名に使う名前
+   */
+  name: string;
+
+  /**
+   * 対象のパス
+   */
+  itemPath: string;
 };
 
 type PrivateGenerateIndexFilesResult = {
@@ -74,12 +59,18 @@ type PrivateGenerateIndexFilesResult = {
    * 出力したindexファイルのパス
    */
   indexPaths: string[];
+
+  /**
+   * indexファイルを生成したか（`dryRun`では生成する予定か）
+   */
+  hasIndex: boolean;
 };
 
 /**
  * 対象のディレクトリ配下のindexファイルを作成する\
  * 対象ファイルで出力形式が特に指定されていない場合は下記の形式で出力\
- * `export { default as ${name} } from './${name}';`
+ * `export { default as ${name} } from './${name}';`\
+ * `srcPath`がディレクトリでない場合や、名前がexport名に使えない場合は例外を投げる
  */
 export default function generateIndexFiles(
   options: GenerateIndexFilesOptions = {},
@@ -90,25 +81,26 @@ export default function generateIndexFiles(
     ignore = DEFAULT_IGNORE,
     include = DEFAULT_INCLUDE,
     exclude = DEFAULT_EXCLUDE,
-    includeNamedWithDefault = true,
+    omitNamedWithDefault = false,
     exportAll = DEFAULT_EXPORT_ALL,
     exportAllAs = DEFAULT_EXPORT_ALL_AS,
     exportDefault = DEFAULT_EXPORT_DEFAULT,
     exportDefaultAndNamed = DEFAULT_EXPORT_DEFAULT_AND_NAMED,
     exportTypeAll = DEFAULT_EXPORT_TYPE_ALL,
-    eol = os.EOL,
+    eol = '\n',
     encoding = 'utf8',
     ...rest
   } = options;
+  assertDirectory(srcPath);
   const indexRegex = _createRegex(indexFileName);
 
   // indexファイルの作成処理を実行
-  const result = _generateIndexFiles(srcPath, indexRegex, {
+  const result = _generateIndexFiles(toPosixPath(srcPath), indexRegex, {
     indexFileName,
     ignore,
     include,
     exclude,
-    includeNamedWithDefault,
+    omitNamedWithDefault,
     exportAll,
     exportAllAs,
     exportDefault,
@@ -132,53 +124,43 @@ function _generateIndexFiles(
     ignore,
     include,
     exclude,
-    includeNamedWithDefault,
-    exportAll,
-    exportAllAs,
-    exportDefault,
-    exportDefaultAndNamed,
-    exportDefaultAs,
-    exportTypeAll,
+    omitNamedWithDefault,
     dryRun,
     transform,
     eol,
     encoding,
   } = options;
-  const exportTargets = {
-    exportAll,
-    exportAllAs,
-    exportDefault,
-    exportDefaultAndNamed,
-    exportDefaultAs,
-    exportTypeAll,
-  };
-  const stat = fs.statSync(targetPath);
-  if (!stat.isDirectory()) {
-    console.error(`"${targetPath}" is not directory.`);
-  }
   const items = fs.readdirSync(targetPath);
-  items.sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1));
-  const exportCodes: ExportCode[] = [];
-  let hasDefaultExport = false;
-  let hasNamedExport = false;
+  items.sort(compareNames);
+  const exportItems: ExportItem[] = [];
 
   const indexPaths: string[] = [];
   for (const item of items) {
     const itemPath = path.posix.join(targetPath, item);
-    const { name } = path.posix.parse(itemPath);
-    const stat = fs.statSync(itemPath);
+    const isDirectory = fs.statSync(itemPath).isDirectory();
+    // ディレクトリは`.`を含んでいてもそのままの名前を使う
+    const name = isDirectory ? item : path.posix.parse(item).name;
 
-    let dirResult: PrivateGenerateIndexFilesResult | undefined;
-    if (
-      stat.isDirectory() &&
-      !isMatchingPath(itemPath, ignore, { conditionOptions: { indexRegex } })
-    ) {
-      // ディレクトリの場合は先に子要素を処理
-      dirResult = _generateIndexFiles(itemPath, indexRegex, options);
-      indexPaths.push(...dirResult.indexPaths);
+    let children: string[] | undefined;
+    let hasIndex = false;
+    if (isDirectory) {
+      if (
+        !isMatchingPath(itemPath, ignore, { conditionOptions: { indexRegex } })
+      ) {
+        // ディレクトリの場合は先に子要素を処理
+        const dirResult = _generateIndexFiles(itemPath, indexRegex, options);
+        indexPaths.push(...dirResult.indexPaths);
+        children = dirResult.children;
+        hasIndex = dirResult.hasIndex;
+      } else {
+        // 処理しないディレクトリは既存のindexファイルの有無で判定
+        hasIndex = fs
+          .readdirSync(itemPath)
+          .some((child) => indexRegex.test(child));
+      }
     }
     const isMatchingPathOptions: IsMatchingPathOptions<object> = {
-      conditionOptions: { indexRegex, children: dirResult?.children },
+      conditionOptions: { indexRegex, children, hasIndex },
     };
 
     if (
@@ -187,80 +169,67 @@ function _generateIndexFiles(
       !isMatchingPath(itemPath, exclude, isMatchingPathOptions)
     ) {
       // indexではない場合
-      let isExported = false;
-      for (const type in EXPORTS) {
-        const exportType = type as keyof typeof EXPORTS;
-        const exportTarget = exportTargets[exportType];
-        if (
-          exportTarget &&
-          isMatchingPath(itemPath, exportTarget, isMatchingPathOptions)
-        ) {
-          // 条件に一致した場合はexportのコードを生成
-          const EXPORT = EXPORTS[exportType];
-          exportCodes.push({
-            type: EXPORT.type,
-            code: EXPORT.generate(name),
-            defaultOnlyCode:
-              'generateDefaultOnly' in EXPORT
-                ? EXPORT.generateDefaultOnly(name)
-                : undefined,
-          });
-          // exportの種類に応じたフラグを立てる
-          if (EXPORT.type === 'named' || EXPORT.type === 'both') {
-            hasNamedExport = true;
-          }
-          if (EXPORT.type === 'default' || EXPORT.type === 'both') {
-            hasDefaultExport = true;
-          }
-          isExported = true;
-          break;
-        }
-      }
-      if (!isExported) {
-        // 未指定の場合はexportDefaultAs
-        exportCodes.push({
-          type: EXPORTS.exportDefaultAs.type,
-          code: EXPORTS.exportDefaultAs.generate(name),
-        });
-        hasNamedExport = true;
-      }
+      // 条件に一致した形式を使い、未指定の場合はexportDefaultAs
+      const form =
+        EXPORT_FORM_ORDER.find((candidate) =>
+          isMatchingPath(itemPath, options[candidate], isMatchingPathOptions),
+        ) ?? 'exportDefaultAs';
+      exportItems.push({ form, name, itemPath });
     }
   }
 
-  if (exportCodes.length) {
-    let exports: string[];
-    if (hasDefaultExport && hasNamedExport && !includeNamedWithDefault) {
-      // デフォルトエクスポートと名前付きエクスポートの混在を許さない場合は名前付きエクスポートを除外
-      exports = exportCodes.reduce<string[]>((result, exportCode) => {
-        if (exportCode.type === 'both') {
-          result.push(exportCode.defaultOnlyCode!);
-        } else if (exportCode.type !== 'named') {
-          result.push(exportCode.code);
-        }
-        return result;
-      }, []);
-    } else {
-      exports = exportCodes.map((exportCode) => exportCode.code);
+  const indexPath = path.posix.join(targetPath, indexFileName);
+  if (!exportItems.length) {
+    if (items.some((item) => indexRegex.test(item))) {
+      console.warn(
+        `${indexPath}: There is nothing to export. The existing index file is left as is and is not exported from the parent directory.`,
+      );
     }
-    if (transform) {
-      exports = transform(exports);
-    }
-
-    const indexPath = path.posix.join(targetPath, indexFileName);
-    if (!dryRun) {
-      // indexファイルの出力
-      fs.writeFileSync(indexPath, exports.join(eol) + eol, {
-        encoding,
-      });
-      console.info(indexPath);
-    } else {
-      console.info(indexPath + '-------------------------------------');
-      console.info(exports.join(eol) + eol);
-    }
-    indexPaths.push(path.resolve(indexPath));
+    return { children: items, indexPaths, hasIndex: false };
   }
 
-  return { children: items, indexPaths };
+  // デフォルトエクスポートと名前付きエクスポートの混在を許さない場合は名前付きエクスポートを除外
+  const types = exportItems.map(({ form }) => EXPORT_FORMS[form].type);
+  const omitNamed =
+    omitNamedWithDefault &&
+    types.some((type) => type === 'default' || type === 'both') &&
+    types.some((type) => type === 'named' || type === 'both');
+  let exports: string[] = [];
+  for (const { form, name, itemPath } of exportItems) {
+    const exportForm = EXPORT_FORMS[form];
+    if (omitNamed && exportForm.type === 'named') {
+      continue;
+    }
+    if (omitNamed && form === 'exportDefaultAndNamed') {
+      exports.push(
+        EXPORT_FORMS.exportDefaultAndNamed.generateDefaultOnly(name),
+      );
+      continue;
+    }
+    if (exportForm.exportsName && !isIdentifierName(name)) {
+      throw new Error(
+        `"${itemPath}" cannot be exported as "${name}" because it is not a valid identifier. Rename it, or export it with exportDefault, exportAll or exportTypeAll.`,
+      );
+    }
+    exports.push(exportForm.generate(name));
+  }
+  if (transform) {
+    exports = transform(exports);
+  }
+
+  if (!dryRun) {
+    // indexファイルの出力
+    fs.writeFileSync(indexPath, exports.join(eol) + eol, {
+      encoding,
+    });
+    console.info(indexPath);
+  } else {
+    console.info(indexPath + '-------------------------------------');
+    console.info(exports.join(eol) + eol);
+  }
+  indexPaths.push(path.resolve(indexPath));
+
+  return { children: items, indexPaths, hasIndex: true };
 }
 
 function _createRegex(str: string) {

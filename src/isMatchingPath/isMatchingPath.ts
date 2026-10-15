@@ -1,12 +1,25 @@
-import fs from 'fs-extra';
 import { posix as path } from 'path';
 import { isFunction, isString } from 'remeda';
+import getEntryType from '../_internal/getEntryType';
+import toPosixPath from '../_internal/toPosixPath';
 import type {
   ConditionFnOptions,
   ConditionValues,
   IsMatchingPathCondition,
   IsMatchingPathOptions,
 } from './types';
+
+/**
+ * 判定中に共有する値
+ */
+type MatchingContext<O extends ConditionFnOptions> = {
+  values: ConditionValues;
+  options: IsMatchingPathOptions<O>;
+  /**
+   * パスの種別（初めて必要になった時点で一度だけ確認する）
+   */
+  getEntryType: () => 'file' | 'dir' | undefined;
+};
 
 /**
  * 処理対象のパスか判定する
@@ -31,10 +44,10 @@ export default function isMatchingPath<
   }
   const conditionList = Array.isArray(conditions) ? conditions : [conditions];
   // パスは'/'区切り
-  const posixPath = path.normalize(targetPath);
+  const posixPath = toPosixPath(targetPath);
   const parsedPath = path.parse(posixPath);
   const parsedDir = path.parse(parsedPath.dir);
-  const values = {
+  const values: ConditionValues = {
     path: posixPath,
     ...parsedPath,
     dirpath: parsedPath.dir,
@@ -42,53 +55,51 @@ export default function isMatchingPath<
     dirname: parsedDir.name,
     dirext: parsedDir.ext,
   };
-  values.path = posixPath;
+  let entryType: 'file' | 'dir' | undefined | null = null;
+  const context: MatchingContext<O> = {
+    values,
+    options,
+    getEntryType: () => {
+      if (entryType === null) {
+        entryType = getEntryType(posixPath);
+      }
+      return entryType;
+    },
+  };
 
-  for (const condition of conditionList) {
-    if (_isMatching(values.path, values, condition, options)) {
-      // conditionの内の何れかがtrueならば一致
-      return true;
-    }
-  }
-  return false;
+  // conditionの内の何れかがtrueならば一致
+  return conditionList.some((condition) =>
+    _isMatching(values.path, condition, context),
+  );
 }
 
-function _isMatching<O extends ConditionFnOptions = ConditionFnOptions>(
+function _isMatching<O extends ConditionFnOptions>(
   value: string,
-  values: ConditionValues,
   condition: IsMatchingPathCondition<O>,
-  options: IsMatchingPathOptions<O>,
+  context: MatchingContext<O>,
 ): boolean {
   if (isString(condition)) {
     // 条件が文字列
-    if (value.includes(condition)) {
-      return true;
-    }
+    return value.includes(condition);
   } else if (condition instanceof RegExp) {
     // 条件が正規表現
-    if (condition.test(value)) {
-      return true;
-    }
+    return condition.test(value);
   } else if (isFunction(condition)) {
     // 条件が関数
-    return condition(values, (options.conditionOptions ?? {}) as O);
-  } else {
-    // 条件が設定
-    const { valueType = 'path', entryType = 'both', conditions } = condition;
-    if (entryType !== 'both') {
-      const stat = fs.statSync(values.path);
-      if (
-        (stat.isDirectory() && entryType !== 'dir') ||
-        (stat.isFile() && entryType !== 'file')
-      ) {
-        return false;
-      }
-    }
-    const conditionList = Array.isArray(conditions) ? conditions : [conditions];
-    // 設定配下のconditionsはand条件
-    return conditionList.every((cond) =>
-      _isMatching(values[valueType], values, cond, options),
+    return condition(
+      context.values,
+      (context.options.conditionOptions ?? {}) as O,
     );
   }
-  return false;
+  // 条件が設定
+  const { valueType = 'path', entryType = 'both', conditions } = condition;
+  if (entryType !== 'both' && context.getEntryType() !== entryType) {
+    // 種別が異なる、または存在しない
+    return false;
+  }
+  const conditionList = Array.isArray(conditions) ? conditions : [conditions];
+  // 設定配下のconditionsはand条件
+  return conditionList.every((cond) =>
+    _isMatching(context.values[valueType], cond, context),
+  );
 }

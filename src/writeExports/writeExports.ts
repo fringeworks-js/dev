@@ -1,14 +1,17 @@
 import fs from 'fs-extra';
+import { assertExists } from '../_internal/assertPath';
 import createExports from '../createExports';
 import type { WriteExportsOptions } from './types';
 
 /**
  * 対象のディレクトリ配下のモジュールをpackage.jsonのexportsに設定する
- * 既存のexportsは置き換える
+ * 既存のexportsは置き換える\
+ * package.jsonが存在しない場合は例外を投げる
  * @param options
  */
 export default function writeExports(options: WriteExportsOptions = {}) {
   const { packageJsonPath = 'package.json', dryRun, ...rest } = options;
+  assertExists(packageJsonPath);
 
   const packageJson = fs.readJsonSync(packageJsonPath, { encoding: 'utf8' });
   packageJson.exports = createExports(rest);

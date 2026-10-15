@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/dev",
-  "version": "0.9.4",
+  "version": "0.10.0",
   "private": true,
   "description": "A library some will find handy, built for developers.",
   "keywords": [
@@ -35,14 +35,15 @@
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown --config-loader tsx",
     "check": "tsc --noEmit",
-    "dev": "tsdown --watch",
+    "dev": "tsdown --watch --config-loader tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "indexes": "tsx scripts/indexes.ts",
-    "lint": "tsdown --dry-run",
+    "lint": "tsdown --dry-run --config-loader tsx",
+    "test": "vitest",
     "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts",
-    "writeexport": "tsx scripts/indexes.ts"
+    "writeexport": "tsx scripts/exports.ts"
   },
   "dependencies": {
     "fs-extra": "^11.3.4",

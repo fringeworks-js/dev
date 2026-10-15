@@ -1,7 +1,9 @@
 import fs from 'fs-extra';
 import { posix as path } from 'path';
 import type { PackageJson } from 'type-fest';
+import { assertDirectory } from '../_internal/assertPath';
 import createExportEntry from '../_internal/createExportEntry';
+import toPosixPath from '../_internal/toPosixPath';
 import { DEFAULT_EXCLUDE } from '../constants';
 import type { IsMatchingPathCondition } from '../isMatchingPath';
 import isMatchingPath from '../isMatchingPath';
@@ -23,6 +25,7 @@ const TARGET_FILE = /^(?!.*\.d\.tsx?$).+\.(ts|tsx)$/i;
 
 /**
  * 対象のディレクトリ配下のモジュールからpackage.jsonのexportsの値を作る
+ * `srcPath`が存在しない場合は例外を投げる
  * @param options
  */
 export default function createExports(
@@ -31,19 +34,18 @@ export default function createExports(
   const {
     srcPath = 'src',
     target = 'src',
-    prefix = target === 'src' ? `./${path.normalize(srcPath)}/` : './',
+    prefix = target === 'src'
+      ? `./${path.join(toPosixPath(srcPath), '/')}`
+      : './',
     include = [],
     exclude = DEFAULT_EXCLUDE,
     extraExports = {},
     ...extensions
   } = options;
+  assertDirectory(srcPath);
 
-  const modules = _collect(
-    path.normalize(srcPath),
-    [INDEX, ...include],
-    exclude,
-  );
-  modules.sort((a, b) => (a.key > b.key ? 1 : -1));
+  const modules = _collect(toPosixPath(srcPath), [INDEX, ...include], exclude);
+  modules.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 
   const exports: Record<string, PackageJson.Exports> = {};
   for (const { key, file } of modules) {

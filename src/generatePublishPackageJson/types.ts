@@ -1,4 +1,4 @@
-import type { JsonReadOptions, JsonWriteOptions } from 'fs-extra';
+import type { JsonOutputOptions, JsonReadOptions } from 'fs-extra';
 import type { PackageJson } from 'type-fest';
 
 export type GeneratePublishPackageJsonOptions = {
@@ -16,7 +16,8 @@ export type GeneratePublishPackageJsonOptions = {
 
   /**
    * exportsに設定する値\
-   * 既定値は`.`,`./*`,`./constants`,`./*\/constants`の4つで、それぞれ下記の形式
+   * 既定値は`.`,`./*`の2つで、それぞれ下記の形式\
+   * 定数は各ディレクトリのindexファイルからexportする前提のため、`./constants`などは含めない
    * @default
    * {
    *   '.': {
@@ -42,6 +43,7 @@ export type GeneratePublishPackageJsonOptions = {
 
   /**
    * package.json書き込み時のオプション
+   * @default { spaces: 2 }
    */
-  jsonWriteOptions?: JsonWriteOptions;
+  jsonWriteOptions?: JsonOutputOptions;
 };

@@ -19,12 +19,12 @@ export const CONSTANTS: IsMatchingPathCondition = {
 };
 
 /**
- * TypeScriptとJavaScript
+ * TypeScriptとJavaScript（型定義ファイルの`*.d.ts`は除く）
  */
 export const TS_JS: IsMatchingPathCondition = {
   valueType: 'base',
   entryType: 'file',
-  conditions: /.+\.(ts|tsx|js|jsx)$/i,
+  conditions: /^(?!.*\.d\.tsx?$).+\.(ts|tsx|js|jsx)$/i,
 };
 
 /**

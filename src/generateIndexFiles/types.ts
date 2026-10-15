@@ -37,12 +37,12 @@ export type GenerateIndexFilesOptions = {
   exclude?: IsMatchingPathCondition[];
 
   /**
-   * 同じindexファイル内にデフォルトエクスポートがある場合でも名前付きエクスポートをする\
-   * falseの場合は名前付きエクスポートを除外し、`exportDefaultAndNamed`はデフォルトエクスポートのみにする\
-   * CJSへ変換する際に混在の警告が出る場合は、ビルドの出力設定を`exports: 'named'`にする
-   * @default true
+   * 同じindexファイル内にデフォルトエクスポートがある場合は名前付きエクスポートを除外する\
+   * `exportDefaultAndNamed`はデフォルトエクスポートのみにする\
+   * CJSへ変換する際に混在の警告が出る場合は、これを指定せずにビルドの出力設定を`exports: 'named'`にする方法もある
+   * @default false
    */
-  includeNamedWithDefault?: boolean;
+  omitNamedWithDefault?: boolean;
 
   /**
    * exportの形式を下記にしたいもの
@@ -116,7 +116,7 @@ export type GenerateIndexFilesOptions = {
   /**
    * 出力の改行コード
    *
-   * @default os.EOL
+   * @default '\n'
    */
   eol?: string;
 

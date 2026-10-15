@@ -74,7 +74,7 @@ Because default and named exports come from the same file, set the build output 
 
 ### The bundler's `external` option
 
-Creates a function that treats every import other than relative paths and paths under `src/` as external. It can be passed to `external` in rolldown, rollup, tsdown, and so on.
+Creates a function that treats every import other than relative paths, absolute paths, and paths under `src/` as external. It can be passed to `external` in rolldown, rollup, tsdown, and so on.
 
 ```ts
 // tsdown.config.ts
@@ -145,56 +145,57 @@ The settings assume that a bundler (tsdown and so on) builds the package and tsc
 ### `generateIndexFiles`
 
 ```ts
-generateIndexFiles(options?: GenerateIndexFilesOptions): void
+generateIndexFiles(options?: GenerateIndexFilesOptions): string[]
 ```
 
 Walks the directories under `srcPath` recursively and generates an index file in each of them.\
 Files and directories that match `include` and do not match `exclude` are exported. The export form is decided by checking `exportAllAs`, `exportDefault`, `exportDefaultAndNamed`, `exportDefaultAs`, `exportTypeAll`, and `exportAll` in that order and using the first match. The broad `exportAll` is checked last so that more specific forms take precedence. If none matches, `export { default as name } from './name';` is used.\
-No index file is generated in a directory that has nothing to export.
+No index file is generated in a directory that has nothing to export. If an old index file is left in such a directory, it is kept with a warning and is not exported from the parent's index file either.\
+Returns the absolute paths of the generated index files. Throws if `srcPath` is not a directory, or if a file or directory name is not a valid identifier (such as `my-file.ts`) in a form that exports it by name.
 
-| Option                     | Type                              | Description                                                                                                                                                                            |
-| -------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `srcPath?`                 | `string`                          | The directory to process. Defaults to `'src'`                                                                                                                                          |
-| `indexFileName?`           | `string`                          | The name of index files. Defaults to `'index.ts'`                                                                                                                                      |
-| `ignore?`                  | `IsMatchingPathCondition[]`       | Directories in which no index file is generated. Their contents are not walked either. Defaults to `[PRIVATE]`                                                                         |
-| `include?`                 | `IsMatchingPathCondition[]`       | What to export. Defaults to `[TS_JS, HAS_INDEX_DIR]`                                                                                                                                   |
-| `exclude?`                 | `IsMatchingPathCondition[]`       | What not to export even if it matches `include`. Defaults to `[TEST_DIR, TEST_FILE, PRIVATE]`                                                                                          |
-| `includeNamedWithDefault?` | `boolean`                         | Keeps named exports even when the same index file has a default export. If `false`, named exports are dropped and `exportDefaultAndNamed` exports only the default. Defaults to `true` |
-| `exportAll?`               | `IsMatchingPathCondition[]`       | What to export as `export * from './name';`. Defaults to `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                  |
-| `exportAllAs?`             | `IsMatchingPathCondition[]`       | What to export as `export * as name from './name';`. Defaults to `[]`                                                                                                                  |
-| `exportDefault?`           | `IsMatchingPathCondition[]`       | What to export as `export { default } from './name';`. Defaults to `[]`                                                                                                                |
-| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | What to export as `export { default, default as name } from './name';`. Defaults to `[MAIN_FILE]`                                                                                      |
-| `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | What to export as `export { default as name } from './name';`                                                                                                                          |
-| `exportTypeAll?`           | `IsMatchingPathCondition[]`       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                                                                |
-| `dryRun?`                  | `boolean`                         | Prints the generated content to the console instead of writing files                                                                                                                   |
-| `transform?`               | `(exports: string[]) => string[]` | Edits the array of export statements before output                                                                                                                                     |
-| `eol?`                     | `string`                          | The line ending. Defaults to `os.EOL`                                                                                                                                                  |
-| `encoding?`                | `BufferEncoding`                  | The output encoding. Defaults to `'utf8'`                                                                                                                                              |
+| Option                   | Type                              | Description                                                                                                                                       |
+| ------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `srcPath?`               | `string`                          | The directory to process. Defaults to `'src'`                                                                                                     |
+| `indexFileName?`         | `string`                          | The name of index files. Defaults to `'index.ts'`                                                                                                 |
+| `ignore?`                | `IsMatchingPathCondition[]`       | Directories in which no index file is generated. Their contents are not walked either. Defaults to `[PRIVATE]`                                    |
+| `include?`               | `IsMatchingPathCondition[]`       | What to export. Defaults to `[TS_JS, HAS_INDEX_DIR]`                                                                                              |
+| `exclude?`               | `IsMatchingPathCondition[]`       | What not to export even if it matches `include`. Defaults to `[TEST_DIR, TEST_FILE, PRIVATE]`                                                     |
+| `omitNamedWithDefault?`  | `boolean`                         | Drops named exports when the same index file has a default export, and makes `exportDefaultAndNamed` export only the default. Defaults to `false` |
+| `exportAll?`             | `IsMatchingPathCondition[]`       | What to export as `export * from './name';`. Defaults to `[CONSTANTS, HAS_INDEX_DIR]`                                                             |
+| `exportAllAs?`           | `IsMatchingPathCondition[]`       | What to export as `export * as name from './name';`. Defaults to `[]`                                                                             |
+| `exportDefault?`         | `IsMatchingPathCondition[]`       | What to export as `export { default } from './name';`. Defaults to `[]`                                                                           |
+| `exportDefaultAndNamed?` | `IsMatchingPathCondition[]`       | What to export as `export { default, default as name } from './name';`. Defaults to `[MAIN_FILE]`                                                 |
+| `exportDefaultAs?`       | `IsMatchingPathCondition[]`       | What to export as `export { default as name } from './name';`                                                                                     |
+| `exportTypeAll?`         | `IsMatchingPathCondition[]`       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                           |
+| `dryRun?`                | `boolean`                         | Prints the generated content to the console instead of writing files                                                                              |
+| `transform?`             | `(exports: string[]) => string[]` | Edits the array of export statements before output                                                                                                |
+| `eol?`                   | `string`                          | The line ending. Defaults to `'\n'`                                                                                                               |
+| `encoding?`              | `BufferEncoding`                  | The output encoding. Defaults to `'utf8'`                                                                                                         |
 
 #### Constants
 
-Conditions for the options can be imported from `@fringeworks/dev/generateIndexFiles/constants`.\
-`TS_JS`, `TYPES`, `CONSTANTS`, `TEST_DIR`, `TEST_FILE`, `PRIVATE`, and `DEFAULT_EXCLUDE` are shared with other functions and can also be imported from `@fringeworks/dev/constants`.
+Conditions for the options can be imported from `@fringeworks/dev/generateIndexFiles` (or the package root).\
+`TS_JS`, `TYPES`, `CONSTANTS`, `TEST_DIR`, `TEST_FILE`, `PRIVATE`, and `DEFAULT_EXCLUDE` are shared with other functions such as `createExports`.
 
-| Constant                           | Description                                                                                              |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `TS_JS`                            | Files with the extension `.ts`, `.tsx`, `.js`, or `.jsx`                                                 |
-| `TYPES`                            | `types.ts`                                                                                               |
-| `CONSTANTS`                        | `constants.ts` and `constants.tsx`                                                                       |
-| `HAS_INDEX_DIR`                    | Directories that directly contain an index file                                                          |
-| `MAIN_FILE`                        | Files whose name without the extension equals the parent directory's name                                |
-| `NAMESPACE_DIR`                    | Directories whose name starts with a lowercase letter and that directly contain no file of the same name |
-| `TEST_DIR`                         | Anything under a `__test__` directory                                                                    |
-| `TEST_FILE`                        | `*.test.ts`, `*.test.tsx`, `*.test.js`, and `*.test.jsx`                                                 |
-| `PRIVATE`                          | Files and directories whose name starts with `_`                                                         |
-| `DEFAULT_IGNORE`                   | The default of `ignore`                                                                                  |
-| `DEFAULT_INCLUDE`                  | The default of `include`                                                                                 |
-| `DEFAULT_EXCLUDE`                  | The default of `exclude`                                                                                 |
-| `DEFAULT_EXPORT_ALL`               | The default of `exportAll`                                                                               |
-| `DEFAULT_EXPORT_ALL_AS`            | The default of `exportAllAs`                                                                             |
-| `DEFAULT_EXPORT_DEFAULT`           | The default of `exportDefault`                                                                           |
-| `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | The default of `exportDefaultAndNamed`                                                                   |
-| `DEFAULT_EXPORT_TYPE_ALL`          | The default of `exportTypeAll`                                                                           |
+| Constant                           | Description                                                                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `TS_JS`                            | Files with the extension `.ts`, `.tsx`, `.js`, or `.jsx` (excluding `.d.ts`)                                                |
+| `TYPES`                            | `types.ts`                                                                                                                  |
+| `CONSTANTS`                        | `constants.ts` and `constants.tsx`                                                                                          |
+| `HAS_INDEX_DIR`                    | Directories for which an index file was generated. Directories skipped by `ignore` match if they already have an index file |
+| `MAIN_FILE`                        | Files whose name without the extension equals the parent directory's name                                                   |
+| `NAMESPACE_DIR`                    | Directories whose name starts with a lowercase letter and that directly contain no file of the same name                    |
+| `TEST_DIR`                         | Anything under a `__test__` directory                                                                                       |
+| `TEST_FILE`                        | `*.test.ts`, `*.test.tsx`, `*.test.js`, and `*.test.jsx`                                                                    |
+| `PRIVATE`                          | Files and directories whose name starts with `_`                                                                            |
+| `DEFAULT_IGNORE`                   | The default of `ignore`                                                                                                     |
+| `DEFAULT_INCLUDE`                  | The default of `include`                                                                                                    |
+| `DEFAULT_EXCLUDE`                  | The default of `exclude`                                                                                                    |
+| `DEFAULT_EXPORT_ALL`               | The default of `exportAll`                                                                                                  |
+| `DEFAULT_EXPORT_ALL_AS`            | The default of `exportAllAs`                                                                                                |
+| `DEFAULT_EXPORT_DEFAULT`           | The default of `exportDefault`                                                                                              |
+| `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | The default of `exportDefaultAndNamed`                                                                                      |
+| `DEFAULT_EXPORT_TYPE_ALL`          | The default of `exportTypeAll`                                                                                              |
 
 To add a condition to a default, combine it with the constants.
 
@@ -202,7 +203,7 @@ To add a condition to a default, combine it with the constants.
 import {
   DEFAULT_EXCLUDE,
   NAMESPACE_DIR,
-} from '@fringeworks/dev/generateIndexFiles/constants';
+} from '@fringeworks/dev/generateIndexFiles';
 
 // Leave a directory out of the exports
 generateIndexFiles({
@@ -220,7 +221,7 @@ createExports(options?: CreateExportsOptions): Record<string, PackageJson.Export
 ```
 
 Collects the modules under `srcPath` and returns a value for `exports` in `package.json`.\
-The targets are `index.ts`, `index.tsx`, and files that match `include`. Files with an extension other than `.ts` or `.tsx`, and type declaration files (`.d.ts`), are not targets.
+The targets are `index.ts`, `index.tsx`, and files that match `include`. Files with an extension other than `.ts` or `.tsx`, and type declaration files (`.d.ts`), are not targets. Throws if `srcPath` is not a directory.
 
 Keys are decided as follows.
 
@@ -289,7 +290,7 @@ If the `exports` for publishing is written with wildcards, take care that the pa
 writeExports(options?: WriteExportsOptions): void
 ```
 
-Replaces `exports` in `package.json` with the result of `createExports`. The existing `exports` is not kept. Pass hand-written entries to `extraExports`.
+Replaces `exports` in `package.json` with the result of `createExports`. The existing `exports` is not kept. Pass hand-written entries to `extraExports`. Throws if `package.json` does not exist.
 
 | Option             | Type      | Description                                                               |
 | ------------------ | --------- | ------------------------------------------------------------------------- |
@@ -301,10 +302,15 @@ All options of `createExports` can also be given.
 ### `addJsExtensions`
 
 ```ts
-addJsExtensions(dir: string): Promise<void>
+addJsExtensions(dir: string): void
 ```
 
-Adds extensions to imports and requires starting with `./` or `../` in the `.js` and `.cjs` files under `dir`. `.js` is added in `.js` files and `.cjs` in `.cjs` files. Paths that already have the extension are left as is.
+Adds extensions to imports, exports, dynamic imports, and requires starting with `.` or `..` in the `.js`, `.mjs`, and `.cjs` files under `dir`. The extension added is the same as that of the file being rewritten.\
+What a specifier points at is decided by looking at the actual files, in the order below. If none exists, the specifier is left as is with a warning. Throws if `dir` is not a directory.
+
+1. A file exists at the specifier as is (`./a.js`, `./data.json`, and so on) — left as is
+2. `<specifier><extension>` exists — the extension is added (`./a` → `./a.js`)
+3. `<specifier>/index<extension>` exists — `/index` and the extension are added (`./dir` → `./dir/index.js`)
 
 ### `createExternal`
 
@@ -315,12 +321,21 @@ createExternal(
 ```
 
 Creates a function for the `external` option of rolldown, rollup, and so on.\
-The function checks `isExternal` and then `isInternal`. If neither matches, it treats an unresolved path as external unless it starts with `.`, `/`, or `src/`.
+The function checks `isExternal` and then `isInternal`. If neither matches, it treats an unresolved path as external unless it starts with one of the following.
 
-| Option        | Type                                          | Description                     |
-| ------------- | --------------------------------------------- | ------------------------------- |
-| `isExternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | Conditions for external modules |
-| `isInternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | Conditions for internal modules |
+- `.` (relative paths)
+- `/`, `\`, `C:\`, `C:/` (absolute paths)
+- `\0` (virtual modules of plugins)
+- `#` (subpath imports)
+- `<srcPath>/`
+
+If you use aliases from `paths` in tsconfig (such as `@/`), add them to `isInternal`.
+
+| Option        | Type                                          | Description                                                    |
+| ------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| `srcPath?`    | `string`                                      | The directory treated as internal modules. Defaults to `'src'` |
+| `isExternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | Conditions for external modules                                |
+| `isInternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | Conditions for internal modules                                |
 
 A condition given as a function receives `{ source, importer, isResolved }` as its second argument.
 
@@ -333,7 +348,8 @@ createSassClassNameFunction(
 ): (args: Value[]) => SassString
 ```
 
-Creates a Sass custom function. The function looks up `classNames` with its first argument as the key and returns the value as a Sass string.
+Creates a Sass custom function. The function looks up `classNames` with its first argument as the key and returns the value as a Sass string.\
+If the argument is not a string, or no class name is defined for the key, it raises a Sass error.
 
 | Parameter    | Type                                 | Description                       |
 | ------------ | ------------------------------------ | --------------------------------- |
@@ -350,10 +366,14 @@ Creates a Sass custom function. The function looks up `classNames` with its firs
 ```ts
 generatePublishPackageJson(
   options?: GeneratePublishPackageJsonOptions,
-): Promise<void>
+): void
 ```
 
-Takes `name`, `version`, `keywords`, `repository`, `license`, `author`, `type`, and `dependencies` from `package.json`, adds `exports`, and writes a `package.json` for publishing.\
+Takes the following fields from `package.json`, adds `exports`, and writes a `package.json` for publishing. The fields follow the defaults of `@fringeworks/rollup-plugin-dist-package`. The output directory is created if it does not exist. Throws if `packageJsonPath` does not exist.
+
+- `name`, `version`, `description`, `keywords`, `repository`, `bugs`, `homepage`, `author`, `contributors`, `license`, `type`, `engines`, `sideEffects`
+- `dependencies`, `peerDependencies`, `peerDependenciesMeta`, `optionalDependencies`
+
 The default `exports` points at the ESM and CJS files that tsdown outputs.
 
 ```json
@@ -363,14 +383,14 @@ The default `exports` points at the ESM and CJS files that tsdown outputs.
 }
 ```
 
-| Option                   | Type                                        | Description                                                                                                       |
-| ------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `packageJsonPath?`       | `string`                                    | The path of the source `package.json`. Defaults to `'./package.json'`                                             |
-| `outputPackageJsonPath?` | `string`                                    | The output path. Defaults to `'./dist/package.json'`                                                              |
-| `exports?`               | `PackageJson['exports']`                    | The value for `exports`. Defaults to entries for `.`, `./*`, `./constants`, and `./*/constants` in the form above |
-| `transform?`             | `(packageJson: PackageJson) => PackageJson` | Edits the content before output                                                                                   |
-| `jsonReadOptions?`       | `JsonReadOptions`                           | Options passed to `readJSON` of `fs-extra`                                                                        |
-| `jsonWriteOptions?`      | `JsonWriteOptions`                          | Options passed to `writeJSON` of `fs-extra`                                                                       |
+| Option                   | Type                                        | Description                                                                      |
+| ------------------------ | ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `packageJsonPath?`       | `string`                                    | The path of the source `package.json`. Defaults to `'./package.json'`            |
+| `outputPackageJsonPath?` | `string`                                    | The output path. Defaults to `'./dist/package.json'`                             |
+| `exports?`               | `PackageJson['exports']`                    | The value for `exports`. Defaults to entries for `.` and `./*` in the form above |
+| `transform?`             | `(packageJson: PackageJson) => PackageJson` | Edits the content before output                                                  |
+| `jsonReadOptions?`       | `JsonReadOptions`                           | Options passed to `readJSON` of `fs-extra`                                       |
+| `jsonWriteOptions?`      | `JsonOutputOptions`                         | Options passed to `outputJSON` of `fs-extra`. Defaults to `{ spaces: 2 }`        |
 
 ### `editJsonFile`
 
@@ -378,7 +398,7 @@ The default `exports` points at the ESM and CJS files that tsdown outputs.
 editJsonFile(jsonFilePath: string, editor: ((obj: any) => object) | object): void
 ```
 
-Reads a JSON file, edits it, and writes it back with an indent of 2. If the file does not exist, it prints an error message and does nothing.
+Reads a JSON file, edits it, and writes it back with an indent of 2. Throws if the file does not exist.
 
 | Parameter      | Type                               | Description                                                                                           |
 | -------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -396,7 +416,8 @@ editJsonFile('package.json', ({ devDependencies, ...rest }) => rest);
 installFromLocal(localNodeModulesPath: string, options?: InstallFromLocalOptions): void
 ```
 
-Of the `dependencies` and `devDependencies` in `package.json`, copies the packages whose specifier starts with `localNodeModulesPath` or `file:<localNodeModulesPath>` into `node_modules`, replacing them. Packages already installed are removed before copying.
+Of the `dependencies` and `devDependencies` in `package.json`, copies the packages specified by a path (optionally with `file:`) that points under `localNodeModulesPath` into `node_modules`, replacing them. Packages already installed are removed before copying.\
+As with npm, the paths of dependencies are resolved against the directory containing `package.json`. Throws if `localNodeModulesPath` or `package.json` does not exist.
 
 | Parameter              | Type                      | Description                                          |
 | ---------------------- | ------------------------- | ---------------------------------------------------- |
@@ -412,10 +433,10 @@ Of the `dependencies` and `devDependencies` in `package.json`, copies the packag
 ### `setVersion`
 
 ```ts
-setVersion(version: string, options?: SetVersionOptions): Promise<void>
+setVersion(version: string, options?: SetVersionOptions): void
 ```
 
-Sets `version` in the workspace's `package.json` and in the `package.json` of each package directly under `packagesPath`.
+Sets `version` in the workspace's `package.json` and in the `package.json` of each package directly under `packagesPath`. Throws if the workspace's `package.json` or `packagesPath` does not exist.
 
 | Option                      | Type     | Description                                                              |
 | --------------------------- | -------- | ------------------------------------------------------------------------ |
@@ -428,29 +449,31 @@ Sets `version` in the workspace's `package.json` and in the `package.json` of ea
 moveFilesToSubdirs(dirPath: string, options?: MoveFilesToSubdirsOptions): void
 ```
 
-Moves the files directly under `dirPath` into subdirectories named after the file without its extension. `foo.ts` becomes `foo/foo.ts`.
+Moves the files directly under `dirPath` into subdirectories named after the file without its extension. `foo.ts` becomes `foo/foo.ts`.\
+Throws if `dirPath` is not a directory, or if `index` is given and a file name is not a valid identifier.
 
 | Parameter  | Type                        | Description                      |
 | ---------- | --------------------------- | -------------------------------- |
 | `dirPath`  | `string`                    | The path of the target directory |
 | `options?` | `MoveFilesToSubdirsOptions` | The options below                |
 
-| Option            | Type                                             | Description                                                                                    |
-| ----------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `index?`          | `boolean`                                        | Creates an index file containing only `export { default } from './name';` in each subdirectory |
-| `process?`        | `(subdirPath: string, fileName: string) => void` | Post-processing for each file                                                                  |
-| `include?`        | `IsMatchingPathCondition[]`                      | What to move                                                                                   |
-| `exclude?`        | `IsMatchingPathCondition[]`                      | What not to move                                                                               |
-| `defaultInclude?` | `IsMatchingPathCondition[]`                      | Conditions used when `include` is not given                                                    |
-| `defaultExclude?` | `IsMatchingPathCondition[]`                      | Conditions used when `exclude` is not given                                                    |
+| Option              | Type                                             | Description                                                                                                                                |
+| ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `index?`            | `boolean`                                        | Creates an index file in each subdirectory in the same form as `generateIndexFiles` (`export { default, default as name } from './name';`) |
+| `afterMove?`        | `(subdirPath: string, fileName: string) => void` | Called after each file is moved                                                                                                            |
+| `include?`          | `IsMatchingPathCondition[]`                      | What to move                                                                                                                               |
+| `exclude?`          | `IsMatchingPathCondition[]`                      | What not to move                                                                                                                           |
+| `defaultInclude?`   | `IsMatchingPathCondition[]`                      | Conditions used when `include` is not given                                                                                                |
+| `defaultExclude?`   | `IsMatchingPathCondition[]`                      | Conditions used when `exclude` is not given                                                                                                |
+| `conditionOptions?` | `ConditionFnOptions`                             | A value passed to condition functions as the second argument                                                                               |
 
 ### `removeFiles`
 
 ```ts
-removeFiles(source: Pattern | Pattern[], options?: Options): Promise<void>
+removeFiles(source: Pattern | Pattern[], options?: RemoveFilesOptions): void
 ```
 
-Removes files that match [fast-glob](https://github.com/mrmlnc/fast-glob) patterns. `options` are fast-glob options.
+Removes files that match [fast-glob](https://github.com/mrmlnc/fast-glob) patterns. `options` are fast-glob options. `absolute` is always treated as `true` so that the right files are removed even when `cwd` is given.
 
 ### `checkExistence`
 
@@ -471,7 +494,7 @@ isMatchingPath<O extends ConditionFnOptions = ConditionFnOptions>(
 ```
 
 Returns `true` if `targetPath` matches any of `conditions`. Returns `false` if `conditions` is `null` or `undefined`.\
-The path is normalized to `/` separators before testing.
+The path is normalized to `/` separators (Windows `\` separators included) before testing.
 
 | Parameter    | Type                                                                              | Description                           |
 | ------------ | --------------------------------------------------------------------------------- | ------------------------------------- |
@@ -492,11 +515,11 @@ A condition `IsMatchingPathCondition` can be one of the following.
 | `ConditionFn`     | Matches if `(values, options) => boolean` returns `true` |
 | `ConditionConfig` | Tests according to the settings below                    |
 
-| Property     | Type                                                                                     | Description                             |
-| ------------ | ---------------------------------------------------------------------------------------- | --------------------------------------- |
-| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | The value to test. Defaults to `'path'` |
-| `entryType?` | `'dir' \| 'file' \| 'both'`                                                              | The kind of entry. Defaults to `'both'` |
-| `conditions` | `string \| RegExp \| ConditionFn<O> \| (string \| RegExp \| ConditionFn<O>)[]`           | Conditions. An array is treated as AND  |
+| Property     | Type                                                                                     | Description                                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | The value to test. Defaults to `'path'`                                                                                                          |
+| `entryType?` | `EntryType`                                                                              | The kind of entry. Defaults to `'both'`. With `'dir'` or `'file'`, a path that does not exist does not match (`'both'` does not check existence) |
+| `conditions` | `string \| RegExp \| ConditionFn<O> \| (string \| RegExp \| ConditionFn<O>)[]`           | Conditions. An array is treated as AND                                                                                                           |
 
 The values of `valueType` are as follows.
 
@@ -528,11 +551,11 @@ isIncludedPath<O extends ConditionFnOptions = ConditionFnOptions>(
 ): boolean
 ```
 
-Returns `true` if `itemPath` is of the kind `itemType`, matches `include`, and does not match `exclude`. When `include` or `exclude` is not given, it is treated as having no condition.
+Returns `true` if `itemPath` is of the kind `entryType`, matches `include`, and does not match `exclude`. When `include` or `exclude` is not given, it is treated as having no condition. Returns `false` for a path that does not exist.
 
 | Option              | Type                           | Description                                                  |
 | ------------------- | ------------------------------ | ------------------------------------------------------------ |
-| `itemType?`         | `'file' \| 'dir' \| 'both'`    | The kind of entry. Defaults to `'file'`                      |
+| `entryType?`        | `EntryType`                    | The kind of entry. Defaults to `'file'`                      |
 | `include?`          | `IsMatchingPathCondition<O>[]` | Conditions for targets                                       |
 | `exclude?`          | `IsMatchingPathCondition<O>[]` | Conditions for excluding from targets                        |
 | `defaultInclude?`   | `IsMatchingPathCondition<O>[]` | Conditions used when `include` is not given                  |
@@ -554,6 +577,7 @@ Returns `true` if `itemPath` is of the kind `itemType`, matches `include`, and d
 | `InstallFromLocalOptions`            | Options of `installFromLocal`                                             |
 | `SetVersionOptions`                  | Options of `setVersion`                                                   |
 | `MoveFilesToSubdirsOptions`          | Options of `moveFilesToSubdirs`                                           |
+| `RemoveFilesOptions`                 | Options of `removeFiles` (fast-glob options)                              |
 | `IsMatchingPathCondition<O>`         | A condition                                                               |
 | `IsMatchingPathOptions<O>`           | Options of `isMatchingPath`                                               |
 | `ConditionConfig<O>`                 | Condition settings                                                        |
@@ -561,6 +585,7 @@ Returns `true` if `itemPath` is of the kind `itemType`, matches `include`, and d
 | `ConditionFnOptions`                 | The second argument of condition functions                                |
 | `ConditionValues`                    | The first argument of condition functions, holding each `valueType` value |
 | `IsIncludedPathOptions<O>`           | Options of `isIncludedPath`                                               |
+| `EntryType`                          | The kind of entry (`'dir' \| 'file' \| 'both'`)                           |
 
 Types can be imported from each function's subpath (e.g. `@fringeworks/dev/generateIndexFiles`).
 

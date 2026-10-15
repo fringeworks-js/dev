@@ -14,18 +14,12 @@ export {
 
 /**
  * 配下にindexファイルのあるディレクトリ
+ * 処理したディレクトリはindexファイルを生成したか（`dryRun`では生成する予定か）で判定し、
+ * `ignore`で処理しなかったディレクトリは既存のindexファイルがあるかで判定する
  */
 export const HAS_INDEX_DIR: IsMatchingPathCondition = {
   entryType: 'dir',
-  conditions: (values, { indexRegex }) => {
-    const items = fs.readdirSync(values.path);
-    for (const item of items) {
-      if (indexRegex.test(item)) {
-        return true;
-      }
-    }
-    return false;
-  },
+  conditions: (_values, { hasIndex }) => hasIndex === true,
 };
 
 /**
@@ -45,11 +39,12 @@ export const NAMESPACE_DIR: IsMatchingPathCondition = {
   entryType: 'dir',
   conditions: (values, { children }) => {
     const { base } = values;
+    const items: string[] = children ?? fs.readdirSync(values.path);
     return (
       // 先頭が小文字
       base.charAt(0) === base.charAt(0).toLowerCase() &&
       // 子要素にディレクトリと同じ名称のファイルが無い
-      children?.every((child: string) => child.split('.')[0] !== base)
+      items.every((child) => child.split('.')[0] !== base)
     );
   },
 };

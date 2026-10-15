@@ -1,15 +1,12 @@
 import fs from 'fs';
 import * as prettier from 'prettier';
 import generateIndexFiles from '../src/generateIndexFiles';
-import {
-  CONSTANTS,
-  PRIVATE,
-  TEST_FILE,
-} from '../src/generateIndexFiles/constants';
+import { PRIVATE, TEST_FILE } from '../src/generateIndexFiles/constants';
 
 const indexPaths = generateIndexFiles({
   exclude: [
-    CONSTANTS,
+    // 共通の条件はgenerateIndexFilesのconstantsから再exportするため、ルートでは除外する
+    { valueType: 'path', conditions: /^src\/constants\.ts$/ },
     PRIVATE,
     TEST_FILE,
     {

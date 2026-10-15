@@ -1,5 +1,6 @@
-import type { Options } from 'fast-glob/out';
+import type { Options } from 'fast-glob';
 
-export type RemoveFilesOptions = {
-  fastGlobOptions?: Options;
-};
+/**
+ * removeFilesのオプション（fast-globのオプション）
+ */
+export type RemoveFilesOptions = Options;

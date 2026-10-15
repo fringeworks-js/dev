@@ -74,7 +74,7 @@ default export と名前付き export を同じファイルから export する�
 
 ### バンドラーの `external` 設定
 
-相対パスと `src/` 配下以外の import を外部モジュールとして扱う関数を作ります。rolldown・rollup・tsdown などの `external` に渡せます。
+相対パス・絶対パスと `src/` 配下以外の import を外部モジュールとして扱う関数を作ります。rolldown・rollup・tsdown などの `external` に渡せます。
 
 ```ts
 // tsdown.config.ts
@@ -145,56 +145,57 @@ sass.compile('style.scss', {
 ### `generateIndexFiles`
 
 ```ts
-generateIndexFiles(options?: GenerateIndexFilesOptions): void
+generateIndexFiles(options?: GenerateIndexFilesOptions): string[]
 ```
 
 `srcPath` 配下のディレクトリを再帰的にたどり、各ディレクトリに index ファイルを生成します。\
 `include` に一致し `exclude` に一致しないファイル・ディレクトリが export の対象になります。export の形式は `exportAllAs`・`exportDefault`・`exportDefaultAndNamed`・`exportDefaultAs`・`exportTypeAll`・`exportAll` の順に条件を調べ、最初に一致したものを使います。範囲の広い `exportAll` を最後に調べるため、個別に指定した形式が優先されます。どれにも一致しない場合は `export { default as name } from './name';` になります。\
-export する対象がないディレクトリには index ファイルを生成しません。
+export する対象がないディレクトリには index ファイルを生成しません。そのディレクトリに以前の index ファイルが残っている場合は、削除せずに警告を出力し、親の index ファイルからも export しません。\
+生成した index ファイルの絶対パスを返します。`srcPath` がディレクトリでない場合や、名前を export 名に使う形式でファイル・ディレクトリ名が識別子として使えない場合（`my-file.ts` など）は例外を投げます。
 
-| オプション                 | 型                                | 説明                                                                                                                                                                                               |
-| -------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `srcPath?`                 | `string`                          | 処理対象のディレクトリ。既定値は `'src'`                                                                                                                                                           |
-| `indexFileName?`           | `string`                          | index ファイルの名前。既定値は `'index.ts'`                                                                                                                                                        |
-| `ignore?`                  | `IsMatchingPathCondition[]`       | index ファイルを生成しないディレクトリ。一致したディレクトリの配下もたどらない。既定値は `[PRIVATE]`                                                                                               |
-| `include?`                 | `IsMatchingPathCondition[]`       | export の対象。既定値は `[TS_JS, HAS_INDEX_DIR]`                                                                                                                                                   |
-| `exclude?`                 | `IsMatchingPathCondition[]`       | `include` に一致しても export しないもの。既定値は `[TEST_DIR, TEST_FILE, PRIVATE]`                                                                                                                |
-| `includeNamedWithDefault?` | `boolean`                         | 同じ index ファイルにデフォルトエクスポートがあっても名前付きエクスポートを残す。`false` の場合は名前付きエクスポートを除き、`exportDefaultAndNamed` は default export だけにする。既定値は `true` |
-| `exportAll?`               | `IsMatchingPathCondition[]`       | `export * from './name';` で export するもの。既定値は `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                                |
-| `exportAllAs?`             | `IsMatchingPathCondition[]`       | `export * as name from './name';` で export するもの。既定値は `[]`                                                                                                                                |
-| `exportDefault?`           | `IsMatchingPathCondition[]`       | `export { default } from './name';` で export するもの。既定値は `[]`                                                                                                                              |
-| `exportDefaultAndNamed?`   | `IsMatchingPathCondition[]`       | `export { default, default as name } from './name';` で export するもの。既定値は `[MAIN_FILE]`                                                                                                    |
-| `exportDefaultAs?`         | `IsMatchingPathCondition[]`       | `export { default as name } from './name';` で export するもの                                                                                                                                     |
-| `exportTypeAll?`           | `IsMatchingPathCondition[]`       | `export type * from './name';` で export するもの。既定値は `[TYPES]`                                                                                                                              |
-| `dryRun?`                  | `boolean`                         | ファイルを書き込まず、生成内容をコンソールに出力する                                                                                                                                               |
-| `transform?`               | `(exports: string[]) => string[]` | 出力前に export 文の配列を編集する                                                                                                                                                                 |
-| `eol?`                     | `string`                          | 改行コード。既定値は `os.EOL`                                                                                                                                                                      |
-| `encoding?`                | `BufferEncoding`                  | 出力のエンコード。既定値は `'utf8'`                                                                                                                                                                |
+| オプション               | 型                                | 説明                                                                                                                                                      |
+| ------------------------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `srcPath?`               | `string`                          | 処理対象のディレクトリ。既定値は `'src'`                                                                                                                  |
+| `indexFileName?`         | `string`                          | index ファイルの名前。既定値は `'index.ts'`                                                                                                               |
+| `ignore?`                | `IsMatchingPathCondition[]`       | index ファイルを生成しないディレクトリ。一致したディレクトリの配下もたどらない。既定値は `[PRIVATE]`                                                      |
+| `include?`               | `IsMatchingPathCondition[]`       | export の対象。既定値は `[TS_JS, HAS_INDEX_DIR]`                                                                                                          |
+| `exclude?`               | `IsMatchingPathCondition[]`       | `include` に一致しても export しないもの。既定値は `[TEST_DIR, TEST_FILE, PRIVATE]`                                                                       |
+| `omitNamedWithDefault?`  | `boolean`                         | 同じ index ファイルにデフォルトエクスポートがある場合は名前付きエクスポートを除き、`exportDefaultAndNamed` は default export だけにする。既定値は `false` |
+| `exportAll?`             | `IsMatchingPathCondition[]`       | `export * from './name';` で export するもの。既定値は `[CONSTANTS, HAS_INDEX_DIR]`                                                                       |
+| `exportAllAs?`           | `IsMatchingPathCondition[]`       | `export * as name from './name';` で export するもの。既定値は `[]`                                                                                       |
+| `exportDefault?`         | `IsMatchingPathCondition[]`       | `export { default } from './name';` で export するもの。既定値は `[]`                                                                                     |
+| `exportDefaultAndNamed?` | `IsMatchingPathCondition[]`       | `export { default, default as name } from './name';` で export するもの。既定値は `[MAIN_FILE]`                                                           |
+| `exportDefaultAs?`       | `IsMatchingPathCondition[]`       | `export { default as name } from './name';` で export するもの                                                                                            |
+| `exportTypeAll?`         | `IsMatchingPathCondition[]`       | `export type * from './name';` で export するもの。既定値は `[TYPES]`                                                                                     |
+| `dryRun?`                | `boolean`                         | ファイルを書き込まず、生成内容をコンソールに出力する                                                                                                      |
+| `transform?`             | `(exports: string[]) => string[]` | 出力前に export 文の配列を編集する                                                                                                                        |
+| `eol?`                   | `string`                          | 改行コード。既定値は `'\n'`                                                                                                                               |
+| `encoding?`              | `BufferEncoding`                  | 出力のエンコード。既定値は `'utf8'`                                                                                                                       |
 
 #### 定数
 
-`@fringeworks/dev/generateIndexFiles/constants` から、オプションに指定できる条件を読み込めます。\
-`TS_JS`・`TYPES`・`CONSTANTS`・`TEST_DIR`・`TEST_FILE`・`PRIVATE`・`DEFAULT_EXCLUDE` は、ほかの関数と共通の条件として `@fringeworks/dev/constants` からも読み込めます。
+`@fringeworks/dev/generateIndexFiles`（またはパッケージのルート）から、オプションに指定できる条件を読み込めます。\
+`TS_JS`・`TYPES`・`CONSTANTS`・`TEST_DIR`・`TEST_FILE`・`PRIVATE`・`DEFAULT_EXCLUDE` は、`createExports` などほかの関数と共通の条件です。
 
-| 定数                               | 説明                                                             |
-| ---------------------------------- | ---------------------------------------------------------------- |
-| `TS_JS`                            | 拡張子が `.ts`・`.tsx`・`.js`・`.jsx` のファイル                 |
-| `TYPES`                            | `types.ts`                                                       |
-| `CONSTANTS`                        | `constants.ts`・`constants.tsx`                                  |
-| `HAS_INDEX_DIR`                    | 直下に index ファイルのあるディレクトリ                          |
-| `MAIN_FILE`                        | 拡張子を除いた名前が親ディレクトリ名と同じファイル               |
-| `NAMESPACE_DIR`                    | 名前が小文字で始まり、直下に同じ名前のファイルがないディレクトリ |
-| `TEST_DIR`                         | `__test__` ディレクトリの配下                                    |
-| `TEST_FILE`                        | `*.test.ts`・`*.test.tsx`・`*.test.js`・`*.test.jsx`             |
-| `PRIVATE`                          | 名前が `_` で始まるファイル・ディレクトリ                        |
-| `DEFAULT_IGNORE`                   | `ignore` の既定値                                                |
-| `DEFAULT_INCLUDE`                  | `include` の既定値                                               |
-| `DEFAULT_EXCLUDE`                  | `exclude` の既定値                                               |
-| `DEFAULT_EXPORT_ALL`               | `exportAll` の既定値                                             |
-| `DEFAULT_EXPORT_ALL_AS`            | `exportAllAs` の既定値                                           |
-| `DEFAULT_EXPORT_DEFAULT`           | `exportDefault` の既定値                                         |
-| `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | `exportDefaultAndNamed` の既定値                                 |
-| `DEFAULT_EXPORT_TYPE_ALL`          | `exportTypeAll` の既定値                                         |
+| 定数                               | 説明                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `TS_JS`                            | 拡張子が `.ts`・`.tsx`・`.js`・`.jsx` のファイル（`.d.ts` を除く）                                           |
+| `TYPES`                            | `types.ts`                                                                                                   |
+| `CONSTANTS`                        | `constants.ts`・`constants.tsx`                                                                              |
+| `HAS_INDEX_DIR`                    | index ファイルを生成したディレクトリ。`ignore` で処理しないディレクトリは、既存の index ファイルがあれば一致 |
+| `MAIN_FILE`                        | 拡張子を除いた名前が親ディレクトリ名と同じファイル                                                           |
+| `NAMESPACE_DIR`                    | 名前が小文字で始まり、直下に同じ名前のファイルがないディレクトリ                                             |
+| `TEST_DIR`                         | `__test__` ディレクトリの配下                                                                                |
+| `TEST_FILE`                        | `*.test.ts`・`*.test.tsx`・`*.test.js`・`*.test.jsx`                                                         |
+| `PRIVATE`                          | 名前が `_` で始まるファイル・ディレクトリ                                                                    |
+| `DEFAULT_IGNORE`                   | `ignore` の既定値                                                                                            |
+| `DEFAULT_INCLUDE`                  | `include` の既定値                                                                                           |
+| `DEFAULT_EXCLUDE`                  | `exclude` の既定値                                                                                           |
+| `DEFAULT_EXPORT_ALL`               | `exportAll` の既定値                                                                                         |
+| `DEFAULT_EXPORT_ALL_AS`            | `exportAllAs` の既定値                                                                                       |
+| `DEFAULT_EXPORT_DEFAULT`           | `exportDefault` の既定値                                                                                     |
+| `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | `exportDefaultAndNamed` の既定値                                                                             |
+| `DEFAULT_EXPORT_TYPE_ALL`          | `exportTypeAll` の既定値                                                                                     |
 
 既定値に条件を足す場合は、定数と組み合わせて指定します。
 
@@ -202,7 +203,7 @@ export する対象がないディレクトリには index ファイルを生成
 import {
   DEFAULT_EXCLUDE,
   NAMESPACE_DIR,
-} from '@fringeworks/dev/generateIndexFiles/constants';
+} from '@fringeworks/dev/generateIndexFiles';
 
 // 特定のディレクトリを export から除く
 generateIndexFiles({
@@ -220,7 +221,7 @@ createExports(options?: CreateExportsOptions): Record<string, PackageJson.Export
 ```
 
 `srcPath` 配下のモジュールを集め、`package.json` の `exports` に設定する値を返します。\
-対象は `index.ts`・`index.tsx` と、`include` に一致するファイルです。拡張子が `.ts`・`.tsx` 以外のファイルと型定義ファイル（`.d.ts`）は対象になりません。
+対象は `index.ts`・`index.tsx` と、`include` に一致するファイルです。拡張子が `.ts`・`.tsx` 以外のファイルと型定義ファイル（`.d.ts`）は対象になりません。`srcPath` がディレクトリでない場合は例外を投げます。
 
 キーは次のように決まります。
 
@@ -289,7 +290,7 @@ Node.js と TypeScript は、ワイルドカードよりも完全一致するキ
 writeExports(options?: WriteExportsOptions): void
 ```
 
-`createExports` の結果で `package.json` の `exports` を置き換えます。既存の `exports` は残りません。手で書いたエントリーは `extraExports` に渡します。
+`createExports` の結果で `package.json` の `exports` を置き換えます。既存の `exports` は残りません。手で書いたエントリーは `extraExports` に渡します。`package.json` が存在しない場合は例外を投げます。
 
 | オプション         | 型        | 説明                                                            |
 | ------------------ | --------- | --------------------------------------------------------------- |
@@ -301,10 +302,15 @@ writeExports(options?: WriteExportsOptions): void
 ### `addJsExtensions`
 
 ```ts
-addJsExtensions(dir: string): Promise<void>
+addJsExtensions(dir: string): void
 ```
 
-`dir` 配下の `.js`・`.cjs` ファイルで、`./`・`../` から始まる import・require に拡張子を付けます。`.js` ファイルには `.js` を、`.cjs` ファイルには `.cjs` を付け、すでに拡張子があるものはそのままにします。
+`dir` 配下の `.js`・`.mjs`・`.cjs` ファイルで、`.`・`..` から始まる import・export・動的 import・require に拡張子を付けます。付ける拡張子は書き換えるファイルと同じものです。\
+指定子が指す先は、実際のファイルを見て次の順に決めます。どれも存在しない場合は書き換えずに警告を出力します。`dir` がディレクトリでない場合は例外を投げます。
+
+1. 指定子のままでファイルが存在する（`./a.js`・`./data.json` など） — そのまま
+2. `<指定子><拡張子>` が存在する — 拡張子を付ける（`./a` → `./a.js`）
+3. `<指定子>/index<拡張子>` が存在する — `/index` と拡張子を付ける（`./dir` → `./dir/index.js`）
 
 ### `createExternal`
 
@@ -315,12 +321,21 @@ createExternal(
 ```
 
 rolldown・rollup などの `external` オプションに渡す関数を作ります。\
-作られた関数は `isExternal`・`isInternal` を順に調べ、どちらにも一致しない場合は、解決前のパスが `.`・`/`・`src/` のいずれでも始まらないものを外部モジュールとして扱います。
+作られた関数は `isExternal`・`isInternal` を順に調べ、どちらにも一致しない場合は、解決前のパスが次のいずれでも始まらないものを外部モジュールとして扱います。
 
-| オプション    | 型                                            | 説明                     |
-| ------------- | --------------------------------------------- | ------------------------ |
-| `isExternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | 外部モジュールとする条件 |
-| `isInternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | 内部モジュールとする条件 |
+- `.`（相対パス）
+- `/`・`\`・`C:\`・`C:/`（絶対パス）
+- `\0`（プラグインの仮想モジュール）
+- `#`（subpath imports）
+- `<srcPath>/`
+
+tsconfig の `paths` の別名（`@/` など）を使う場合は、`isInternal` に指定します。
+
+| オプション    | 型                                            | 説明                                                   |
+| ------------- | --------------------------------------------- | ------------------------------------------------------ |
+| `srcPath?`    | `string`                                      | 内部モジュールとして扱うディレクトリ。既定値は `'src'` |
+| `isExternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | 外部モジュールとする条件                               |
+| `isInternal?` | `IsMatchingPathCondition<ConditionOptions>[]` | 内部モジュールとする条件                               |
 
 条件に関数を指定すると、第2引数に `{ source, importer, isResolved }` が渡されます。
 
@@ -333,7 +348,8 @@ createSassClassNameFunction(
 ): (args: Value[]) => SassString
 ```
 
-Sass のカスタム関数を作ります。作られた関数は、第1引数の文字列をキーにして `classNames` から値を取り出し、Sass の文字列として返します。
+Sass のカスタム関数を作ります。作られた関数は、第1引数の文字列をキーにして `classNames` から値を取り出し、Sass の文字列として返します。\
+引数が文字列でない場合や、キーに対応するクラス名が無い場合は Sass のエラーになります。
 
 | 引数         | 型                                   | 説明                         |
 | ------------ | ------------------------------------ | ---------------------------- |
@@ -350,10 +366,14 @@ Sass のカスタム関数を作ります。作られた関数は、第1引数�
 ```ts
 generatePublishPackageJson(
   options?: GeneratePublishPackageJsonOptions,
-): Promise<void>
+): void
 ```
 
-`package.json` から `name`・`version`・`keywords`・`repository`・`license`・`author`・`type`・`dependencies` を取り出し、`exports` を加えた公開用の `package.json` を出力します。\
+`package.json` から次の項目を取り出し、`exports` を加えた公開用の `package.json` を出力します。引き継ぐ項目は `@fringeworks/rollup-plugin-dist-package` の既定値に合わせています。出力先のディレクトリが無い場合は作ります。`packageJsonPath` が存在しない場合は例外を投げます。
+
+- `name`・`version`・`description`・`keywords`・`repository`・`bugs`・`homepage`・`author`・`contributors`・`license`・`type`・`engines`・`sideEffects`
+- `dependencies`・`peerDependencies`・`peerDependenciesMeta`・`optionalDependencies`
+
 `exports` の既定値は、tsdown が出力する ESM と CJS のファイルを指します。
 
 ```json
@@ -363,14 +383,14 @@ generatePublishPackageJson(
 }
 ```
 
-| オプション               | 型                                          | 説明                                                                                                    |
-| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `packageJsonPath?`       | `string`                                    | 元にする `package.json` のパス。既定値は `'./package.json'`                                             |
-| `outputPackageJsonPath?` | `string`                                    | 出力先のパス。既定値は `'./dist/package.json'`                                                          |
-| `exports?`               | `PackageJson['exports']`                    | `exports` に設定する値。既定値は `.`・`./*`・`./constants`・`./*/constants` の4つで、形式は上記のとおり |
-| `transform?`             | `(packageJson: PackageJson) => PackageJson` | 出力前に内容を編集する                                                                                  |
-| `jsonReadOptions?`       | `JsonReadOptions`                           | `fs-extra` の `readJSON` に渡すオプション                                                               |
-| `jsonWriteOptions?`      | `JsonWriteOptions`                          | `fs-extra` の `writeJSON` に渡すオプション                                                              |
+| オプション               | 型                                          | 説明                                                                    |
+| ------------------------ | ------------------------------------------- | ----------------------------------------------------------------------- |
+| `packageJsonPath?`       | `string`                                    | 元にする `package.json` のパス。既定値は `'./package.json'`             |
+| `outputPackageJsonPath?` | `string`                                    | 出力先のパス。既定値は `'./dist/package.json'`                          |
+| `exports?`               | `PackageJson['exports']`                    | `exports` に設定する値。既定値は `.`・`./*` の2つで、形式は上記のとおり |
+| `transform?`             | `(packageJson: PackageJson) => PackageJson` | 出力前に内容を編集する                                                  |
+| `jsonReadOptions?`       | `JsonReadOptions`                           | `fs-extra` の `readJSON` に渡すオプション                               |
+| `jsonWriteOptions?`      | `JsonOutputOptions`                         | `fs-extra` の `outputJSON` に渡すオプション。既定値は `{ spaces: 2 }`   |
 
 ### `editJsonFile`
 
@@ -378,7 +398,7 @@ generatePublishPackageJson(
 editJsonFile(jsonFilePath: string, editor: ((obj: any) => object) | object): void
 ```
 
-JSON ファイルを読み込んで編集し、インデント2つで書き戻します。ファイルがない場合はエラーメッセージを出力して何もしません。
+JSON ファイルを読み込んで編集し、インデント2つで書き戻します。ファイルがない場合は例外を投げます。
 
 | 引数           | 型                                 | 説明                                                                         |
 | -------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
@@ -396,7 +416,8 @@ editJsonFile('package.json', ({ devDependencies, ...rest }) => rest);
 installFromLocal(localNodeModulesPath: string, options?: InstallFromLocalOptions): void
 ```
 
-`package.json` の `dependencies`・`devDependencies` のうち、指定が `localNodeModulesPath` または `file:<localNodeModulesPath>` で始まるパッケージを、`node_modules` にコピーして差し替えます。すでにインストールされているものは削除してからコピーします。
+`package.json` の `dependencies`・`devDependencies` のうち、パス（`file:` 付きも可）で指定され、そのパスが `localNodeModulesPath` 配下を指すパッケージを、`node_modules` にコピーして差し替えます。すでにインストールされているものは削除してからコピーします。\
+依存関係のパスは、npm と同じく `package.json` のあるディレクトリを基準に解決します。`localNodeModulesPath` や `package.json` が存在しない場合は例外を投げます。
 
 | 引数                   | 型                        | 説明                                           |
 | ---------------------- | ------------------------- | ---------------------------------------------- |
@@ -412,10 +433,10 @@ installFromLocal(localNodeModulesPath: string, options?: InstallFromLocalOptions
 ### `setVersion`
 
 ```ts
-setVersion(version: string, options?: SetVersionOptions): Promise<void>
+setVersion(version: string, options?: SetVersionOptions): void
 ```
 
-ワークスペースの `package.json` と、`packagesPath` 直下の各パッケージの `package.json` の `version` を `version` に書き換えます。
+ワークスペースの `package.json` と、`packagesPath` 直下の各パッケージの `package.json` の `version` を `version` に書き換えます。ワークスペースの `package.json` や `packagesPath` が存在しない場合は例外を投げます。
 
 | オプション                  | 型       | 説明                                                              |
 | --------------------------- | -------- | ----------------------------------------------------------------- |
@@ -428,29 +449,31 @@ setVersion(version: string, options?: SetVersionOptions): Promise<void>
 moveFilesToSubdirs(dirPath: string, options?: MoveFilesToSubdirsOptions): void
 ```
 
-`dirPath` 直下のファイルを、拡張子を除いた同じ名前のサブディレクトリに移動します。`foo.ts` は `foo/foo.ts` になります。
+`dirPath` 直下のファイルを、拡張子を除いた同じ名前のサブディレクトリに移動します。`foo.ts` は `foo/foo.ts` になります。\
+`dirPath` がディレクトリでない場合や、`index` を指定してファイル名が識別子として使えない場合は例外を投げます。
 
 | 引数       | 型                          | 説明                     |
 | ---------- | --------------------------- | ------------------------ |
 | `dirPath`  | `string`                    | 対象のディレクトリのパス |
 | `options?` | `MoveFilesToSubdirsOptions` | 下記のオプション         |
 
-| オプション        | 型                                               | 説明                                                                     |
-| ----------------- | ------------------------------------------------ | ------------------------------------------------------------------------ |
-| `index?`          | `boolean`                                        | 移動先に `export { default } from './name';` だけの index ファイルを作る |
-| `process?`        | `(subdirPath: string, fileName: string) => void` | ファイルごとの後処理                                                     |
-| `include?`        | `IsMatchingPathCondition[]`                      | 移動する対象                                                             |
-| `exclude?`        | `IsMatchingPathCondition[]`                      | 移動する対象から除外するもの                                             |
-| `defaultInclude?` | `IsMatchingPathCondition[]`                      | `include` 未指定時に使う条件                                             |
-| `defaultExclude?` | `IsMatchingPathCondition[]`                      | `exclude` 未指定時に使う条件                                             |
+| オプション          | 型                                               | 説明                                                                                                                    |
+| ------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `index?`            | `boolean`                                        | 移動先に `generateIndexFiles` と同じ形式（`export { default, default as name } from './name';`）の index ファイルを作る |
+| `afterMove?`        | `(subdirPath: string, fileName: string) => void` | ファイルを移動した後の処理                                                                                              |
+| `include?`          | `IsMatchingPathCondition[]`                      | 移動する対象                                                                                                            |
+| `exclude?`          | `IsMatchingPathCondition[]`                      | 移動する対象から除外するもの                                                                                            |
+| `defaultInclude?`   | `IsMatchingPathCondition[]`                      | `include` 未指定時に使う条件                                                                                            |
+| `defaultExclude?`   | `IsMatchingPathCondition[]`                      | `exclude` 未指定時に使う条件                                                                                            |
+| `conditionOptions?` | `ConditionFnOptions`                             | 条件の関数に第2引数として渡す値                                                                                         |
 
 ### `removeFiles`
 
 ```ts
-removeFiles(source: Pattern | Pattern[], options?: Options): Promise<void>
+removeFiles(source: Pattern | Pattern[], options?: RemoveFilesOptions): void
 ```
 
-[fast-glob](https://github.com/mrmlnc/fast-glob) のパターンに一致するファイルを削除します。`options` は fast-glob のオプションです。
+[fast-glob](https://github.com/mrmlnc/fast-glob) のパターンに一致するファイルを削除します。`options` は fast-glob のオプションです。`cwd` を指定した場合も正しい場所のファイルを削除するため、`absolute` は常に `true` として扱います。
 
 ### `checkExistence`
 
@@ -471,7 +494,7 @@ isMatchingPath<O extends ConditionFnOptions = ConditionFnOptions>(
 ```
 
 `targetPath` が `conditions` のいずれかに一致すれば `true` を返します。`conditions` が `null`・`undefined` の場合は `false` を返します。\
-パスは `/` 区切りに正規化してから検査します。
+パスは `/` 区切り（Windows の `\` 区切りも `/` に変換）に正規化してから検査します。
 
 | 引数         | 型                                                                                | 説明                                 |
 | ------------ | --------------------------------------------------------------------------------- | ------------------------------------ |
@@ -492,11 +515,11 @@ isMatchingPath<O extends ConditionFnOptions = ConditionFnOptions>(
 | `ConditionFn`     | `(values, options) => boolean` が `true` を返せば一致 |
 | `ConditionConfig` | 下記の設定に従って検査する                            |
 
-| プロパティ   | 型                                                                                       | 説明                                  |
-| ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------- |
-| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | 検査する値。既定値は `'path'`         |
-| `entryType?` | `'dir' \| 'file' \| 'both'`                                                              | 対象の種別。既定値は `'both'`         |
-| `conditions` | `string \| RegExp \| ConditionFn<O> \| (string \| RegExp \| ConditionFn<O>)[]`           | 一致条件。配列の場合は AND 条件になる |
+| プロパティ   | 型                                                                                       | 説明                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | 検査する値。既定値は `'path'`                                                                                      |
+| `entryType?` | `EntryType`                                                                              | 対象の種別。既定値は `'both'`。`'dir'`・`'file'` の場合、存在しないパスは一致しない（`'both'` は存在を確認しない） |
+| `conditions` | `string \| RegExp \| ConditionFn<O> \| (string \| RegExp \| ConditionFn<O>)[]`           | 一致条件。配列の場合は AND 条件になる                                                                              |
 
 `valueType` の各値は次のとおりです。
 
@@ -528,11 +551,11 @@ isIncludedPath<O extends ConditionFnOptions = ConditionFnOptions>(
 ): boolean
 ```
 
-`itemPath` が `itemType` の種別で、`include` に一致し、`exclude` に一致しない場合に `true` を返します。`include`・`exclude` を指定しない場合は条件なしとして扱います。
+`itemPath` が `entryType` の種別で、`include` に一致し、`exclude` に一致しない場合に `true` を返します。`include`・`exclude` を指定しない場合は条件なしとして扱います。存在しないパスは `false` を返します。
 
 | オプション          | 型                             | 説明                            |
 | ------------------- | ------------------------------ | ------------------------------- |
-| `itemType?`         | `'file' \| 'dir' \| 'both'`    | 対象の種別。既定値は `'file'`   |
+| `entryType?`        | `EntryType`                    | 対象の種別。既定値は `'file'`   |
 | `include?`          | `IsMatchingPathCondition<O>[]` | 対象とする条件                  |
 | `exclude?`          | `IsMatchingPathCondition<O>[]` | 対象から除外する条件            |
 | `defaultInclude?`   | `IsMatchingPathCondition<O>[]` | `include` 未指定時に使う条件    |
@@ -541,26 +564,28 @@ isIncludedPath<O extends ConditionFnOptions = ConditionFnOptions>(
 
 ### 型
 
-| 型                                   | 説明                                          |
-| ------------------------------------ | --------------------------------------------- |
-| `GenerateIndexFilesOptions`          | `generateIndexFiles` のオプション             |
-| `CreateExportsOptions`               | `createExports` のオプション                  |
-| `WriteExportsOptions`                | `writeExports` のオプション                   |
-| `CreateExternalOptions`              | `createExternal` のオプション                 |
-| `ExternalFunction`                   | `external` オプションに渡す関数               |
-| `ConditionOptions`                   | `createExternal` の条件の関数に渡される値     |
-| `CreateSassClassNameFunctionOptions` | `createSassClassNameFunction` のオプション    |
-| `GeneratePublishPackageJsonOptions`  | `generatePublishPackageJson` のオプション     |
-| `InstallFromLocalOptions`            | `installFromLocal` のオプション               |
-| `SetVersionOptions`                  | `setVersion` のオプション                     |
-| `MoveFilesToSubdirsOptions`          | `moveFilesToSubdirs` のオプション             |
-| `IsMatchingPathCondition<O>`         | 一致条件                                      |
-| `IsMatchingPathOptions<O>`           | `isMatchingPath` のオプション                 |
-| `ConditionConfig<O>`                 | 条件設定                                      |
-| `ConditionFn<O>`                     | 条件の関数                                    |
-| `ConditionFnOptions`                 | 条件の関数の第2引数                           |
-| `ConditionValues`                    | 条件の関数の第1引数。`valueType` の各値を持つ |
-| `IsIncludedPathOptions<O>`           | `isIncludedPath` のオプション                 |
+| 型                                   | 説明                                                 |
+| ------------------------------------ | ---------------------------------------------------- |
+| `GenerateIndexFilesOptions`          | `generateIndexFiles` のオプション                    |
+| `CreateExportsOptions`               | `createExports` のオプション                         |
+| `WriteExportsOptions`                | `writeExports` のオプション                          |
+| `CreateExternalOptions`              | `createExternal` のオプション                        |
+| `ExternalFunction`                   | `external` オプションに渡す関数                      |
+| `ConditionOptions`                   | `createExternal` の条件の関数に渡される値            |
+| `CreateSassClassNameFunctionOptions` | `createSassClassNameFunction` のオプション           |
+| `GeneratePublishPackageJsonOptions`  | `generatePublishPackageJson` のオプション            |
+| `InstallFromLocalOptions`            | `installFromLocal` のオプション                      |
+| `SetVersionOptions`                  | `setVersion` のオプション                            |
+| `MoveFilesToSubdirsOptions`          | `moveFilesToSubdirs` のオプション                    |
+| `RemoveFilesOptions`                 | `removeFiles` のオプション（fast-glob のオプション） |
+| `IsMatchingPathCondition<O>`         | 一致条件                                             |
+| `IsMatchingPathOptions<O>`           | `isMatchingPath` のオプション                        |
+| `ConditionConfig<O>`                 | 条件設定                                             |
+| `ConditionFn<O>`                     | 条件の関数                                           |
+| `ConditionFnOptions`                 | 条件の関数の第2引数                                  |
+| `ConditionValues`                    | 条件の関数の第1引数。`valueType` の各値を持つ        |
+| `IsIncludedPathOptions<O>`           | `isIncludedPath` のオプション                        |
+| `EntryType`                          | 対象の種別（`'dir' \| 'file' \| 'both'`）            |
 
 型は各関数のサブパス（例: `@fringeworks/dev/generateIndexFiles`）から読み込めます。
 

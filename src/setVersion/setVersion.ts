@@ -1,13 +1,15 @@
 import fs from 'fs-extra';
 import path from 'path';
+import { assertDirectory, assertExists } from '../_internal/assertPath';
 import type { SetVersionOptions } from './types';
 
 /**
- * ワークスペースのパッケージにバージョンを反映する
+ * ワークスペースのパッケージにバージョンを反映する\
+ * ワークスペースのpackage.jsonや`packagesPath`が存在しない場合は例外を投げる
  * @param version バージョン
  * @param options オプション
  */
-export default async function setVersion(
+export default function setVersion(
   version: string,
   options: SetVersionOptions = {},
 ) {
@@ -15,11 +17,11 @@ export default async function setVersion(
     workspacePackageJsonPath = 'package.json',
     packagesPath = 'packages',
   } = options;
+  assertExists(workspacePackageJsonPath);
+  assertDirectory(packagesPath);
 
-  if (fs.existsSync(workspacePackageJsonPath)) {
-    // ワークスペースのpackage.jsonを更新
-    _updatePkgJson(version, workspacePackageJsonPath);
-  }
+  // ワークスペースのpackage.jsonを更新
+  _updatePkgJson(version, workspacePackageJsonPath);
   const pkgs = fs.readdirSync(packagesPath);
   for (const pkg of pkgs) {
     const packagePath = path.join(packagesPath, pkg);

@@ -1,29 +1,30 @@
-import fs, { Stats } from 'fs-extra';
+import getEntryType from '../_internal/getEntryType';
 import type { ConditionFnOptions } from '../isMatchingPath';
 import isMatchingPath from '../isMatchingPath';
 import type { IsIncludedPathOptions } from './types';
 
-const IS_TARGET_TYPE = {
-  file: (stat: Stats) => stat.isFile(),
-  dir: (stat: Stats) => stat.isDirectory(),
-  both: (stat: Stats) => stat.isFile() || stat.isDirectory(),
-} as const;
-
+/**
+ * パスが対象に含まれるか判定する
+ * 存在しないパスは含まれない
+ * @param itemPath 検査対象のパス
+ * @param options オプション
+ */
 export default function isIncludedPath<
   O extends ConditionFnOptions = ConditionFnOptions,
 >(itemPath: string, options: IsIncludedPathOptions<O> = {}) {
   const {
-    itemType = 'file',
+    entryType = 'file',
     defaultInclude,
     defaultExclude,
     include = defaultInclude,
     exclude = defaultExclude,
     ...rest
   } = options;
-  const stat = fs.statSync(itemPath);
+  const actualEntryType = getEntryType(itemPath);
 
   return (
-    IS_TARGET_TYPE[itemType](stat) &&
+    actualEntryType !== undefined &&
+    (entryType === 'both' || actualEntryType === entryType) &&
     (!include || isMatchingPath(itemPath, include, rest)) &&
     (!exclude || !isMatchingPath(itemPath, exclude, rest))
   );

@@ -2,17 +2,18 @@ import type { IsIncludedPathOptions } from '../isIncludedPath';
 
 export type MoveFilesToSubdirsOptions = Omit<
   IsIncludedPathOptions,
-  'itemType'
+  'entryType'
 > & {
   /**
-   * ファイル毎の後処理
+   * ファイルを移動した後の処理
    * @param subdirPath サブディレクトリのパス
    * @param fileName ファイル名
    */
-  process?: (subdirPath: string, fileName: string) => void;
+  afterMove?: (subdirPath: string, fileName: string) => void;
 
   /**
-   * indexファイルの作成
+   * 移動先にindexファイルを作る
+   * 内容は`export { default, default as name } from './name';`
    */
   index?: boolean;
 };
