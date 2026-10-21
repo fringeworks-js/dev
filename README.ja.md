@@ -122,6 +122,51 @@ sass.compile('style.scss', {
 
 ビルドはバンドラー（tsdown など）が行い、tsc は型チェックだけに使う前提の設定です（`noEmit: true`）。`strict` に加えて `noUncheckedIndexedAccess`・`noImplicitOverride`・`noImplicitReturns` などを有効にしています。`include` などのパスを含む設定は、読み込む側の位置を基準にできないため含めていません。
 
+### 共通の ESLint の設定
+
+`@fringeworks` のパッケージで共通に使っている ESLint の設定（flat config）を作ります。使う側では `eslint` と `typescript` をインストールします。
+
+```js
+// eslint.config.js
+import createESLintConfig from '@fringeworks/dev/createESLintConfig';
+
+export default createESLintConfig(import.meta.dirname);
+```
+
+React のパッケージでは `react: true` を指定します。パッケージ固有の設定は、`defineConfig` で後ろに書き足します。
+
+```js
+// eslint.config.js
+import createESLintConfig from '@fringeworks/dev/createESLintConfig';
+import { defineConfig } from 'eslint/config';
+import storybook from 'eslint-plugin-storybook';
+
+export default defineConfig([
+  createESLintConfig(import.meta.dirname, { react: true }),
+  storybook.configs['flat/recommended'],
+]);
+```
+
+### 共通の Prettier の設定
+
+`@fringeworks` のパッケージで共通に使っている Prettier の設定を作ります。使う側では `prettier` と `typescript` をインストールします。プラグイン（`prettier-plugin-organize-imports`・`prettier-plugin-packagejson`）は同梱しているため、インストールは不要です。
+
+```ts
+// prettier.config.ts
+import createPrettierConfig from '@fringeworks/dev/createPrettierConfig';
+
+export default createPrettierConfig();
+```
+
+使っていない import も削除する設定は、`--config` で指定するファイルとして別に用意します。
+
+```ts
+// prettier.tidy.config.ts
+import createPrettierConfig from '@fringeworks/dev/createPrettierConfig';
+
+export default createPrettierConfig({ removeUnusedImports: true });
+```
+
 ## API
 
 | 関数                                                | 説明                                                                 |
@@ -132,6 +177,8 @@ sass.compile('style.scss', {
 | `addJsExtensions(dir)`                              | ビルド後の JavaScript ファイルの相対 import に拡張子を付ける         |
 | `createExternal(options?)`                          | バンドラーの `external` オプションに渡す関数を作る                   |
 | `createSassClassNameFunction(classNames, options?)` | TypeScript で定義したクラス名を返す Sass のカスタム関数を作る        |
+| `createESLintConfig(rootDir, options?)`             | 共通の ESLint の設定を作る                                           |
+| `createPrettierConfig(options?)`                    | 共通の Prettier の設定を作る                                         |
 | `generatePublishPackageJson(options?)`              | 公開用の `package.json` を生成する                                   |
 | `editJsonFile(jsonFilePath, editor)`                | JSON ファイルを編集する                                              |
 | `installFromLocal(localNodeModulesPath, options?)`  | ローカルに置いたパッケージを `node_modules` にコピーする             |
@@ -361,6 +408,64 @@ Sass のカスタム関数を作ります。作られた関数は、第1引数�
 | `prefix?`  | `string` | キーを引くときに引数の前に付ける文字列 |
 | `suffix?`  | `string` | キーを引くときに引数の後に付ける文字列 |
 
+### `createESLintConfig`
+
+```ts
+createESLintConfig(
+  rootDir: string,
+  options?: CreateESLintConfigOptions,
+): Linter.Config[]
+```
+
+`@fringeworks` のパッケージで共通に使う ESLint の設定（flat config）を作ります。
+
+- `dist`・`coverage`・`storybook-static`・`test-results` を対象外にする
+- パッケージ内の全ての `.ts`・`.tsx` に `@eslint/js` と `typescript-eslint` の recommended を適用する
+- `any` の使用（`@typescript-eslint/no-explicit-any`）をエラーにする。テストのファイル（`*.test.*`・`*.test-d.*`・`e2e/` 配下）では許容する
+- 使っていない変数（`@typescript-eslint/no-unused-vars`）をエラーにする。`_` で始まる名前と、rest で残りを取り出すために分割代入した名前は許容する
+
+型情報を使うルールは含めていないため、tsconfig の `include` に無いファイルも対象にできます。
+
+| 引数       | 型                          | 説明                                                                                                   |
+| ---------- | --------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `rootDir`  | `string`                    | パッケージのルートディレクトリ（`import.meta.dirname`）。typescript-eslint の `tsconfigRootDir` に渡す |
+| `options?` | `CreateESLintConfigOptions` | 下記のオプション                                                                                       |
+
+| オプション | 型        | 説明                                                                    |
+| ---------- | --------- | ----------------------------------------------------------------------- |
+| `react?`   | `boolean` | `eslint-plugin-react-hooks` の recommended を追加する。既定値は `false` |
+
+`rootDir` は、複数のパッケージの設定を同じプロセスで読み込む場合（VS Code でマルチルートのワークスペースを開いた場合など）に、typescript-eslint が `tsconfigRootDir` を推測できずにエラーになるのを防ぐために指定します。
+
+### `createPrettierConfig`
+
+```ts
+createPrettierConfig(
+  options?: CreatePrettierConfigOptions,
+): Config
+```
+
+`@fringeworks` のパッケージで共通に使う Prettier の設定を作ります。
+
+| 設定             | 値                                                                |
+| ---------------- | ----------------------------------------------------------------- |
+| `arrowParens`    | `'always'`                                                        |
+| `semi`           | `true`                                                            |
+| `useTabs`        | `false`                                                           |
+| `tabWidth`       | `2`                                                               |
+| `bracketSpacing` | `true`                                                            |
+| `singleQuote`    | `true`                                                            |
+| `printWidth`     | `80`                                                              |
+| `trailingComma`  | `'all'`                                                           |
+| `endOfLine`      | `'auto'`                                                          |
+| `plugins`        | `prettier-plugin-organize-imports`・`prettier-plugin-packagejson` |
+
+プラグインは読み込んだものを渡すため、使う側のパッケージにインストールする必要はありません。
+
+| オプション             | 型        | 説明                                                              |
+| ---------------------- | --------- | ----------------------------------------------------------------- |
+| `removeUnusedImports?` | `boolean` | import の整理で、使っていない import を削除する。既定値は `false` |
+
 ### `generatePublishPackageJson`
 
 ```ts
@@ -573,6 +678,8 @@ isIncludedPath<O extends ConditionFnOptions = ConditionFnOptions>(
 | `ExternalFunction`                   | `external` オプションに渡す関数                      |
 | `ConditionOptions`                   | `createExternal` の条件の関数に渡される値            |
 | `CreateSassClassNameFunctionOptions` | `createSassClassNameFunction` のオプション           |
+| `CreateESLintConfigOptions`          | `createESLintConfig` のオプション                    |
+| `CreatePrettierConfigOptions`        | `createPrettierConfig` のオプション                  |
 | `GeneratePublishPackageJsonOptions`  | `generatePublishPackageJson` のオプション            |
 | `InstallFromLocalOptions`            | `installFromLocal` のオプション                      |
 | `SetVersionOptions`                  | `setVersion` のオプション                            |

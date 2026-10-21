@@ -96,6 +96,8 @@ export type ConditionFn<O extends ConditionFnOptions = ConditionFnOptions> = (
 /**
  * カスタム条件関数のオプション
  */
+// interface で定義したオプションも受け付けるよう、unknown ではなく any にする
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ConditionFnOptions = Record<string, any>;
 
 /**

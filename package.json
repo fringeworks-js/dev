@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/dev",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "private": true,
   "description": "A library some will find handy, built for developers.",
   "keywords": [
@@ -17,8 +17,10 @@
     ".": "./src/index.ts",
     "./addJsExtensions": "./src/addJsExtensions/index.ts",
     "./checkExistence": "./src/checkExistence/index.ts",
+    "./createESLintConfig": "./src/createESLintConfig/index.ts",
     "./createExports": "./src/createExports/index.ts",
     "./createExternal": "./src/createExternal/index.ts",
+    "./createPrettierConfig": "./src/createPrettierConfig/index.ts",
     "./createSassClassNameFunction": "./src/createSassClassNameFunction/index.ts",
     "./editJsonFile": "./src/editJsonFile/index.ts",
     "./generateIndexFiles": "./src/generateIndexFiles/index.ts",
@@ -40,32 +42,52 @@
     "dev": "tsdown --watch --config-loader tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "indexes": "tsx scripts/indexes.ts",
-    "lint": "tsdown --dry-run --config-loader tsx",
+    "lint": "eslint .",
     "release": "pnpm build && npm publish ./dist",
     "test": "vitest",
     "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts",
     "writeexport": "tsx scripts/exports.ts"
   },
   "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.4",
-    "remeda": "^2.34.0",
-    "sass": "^1.105.0",
-    "type-fest": "^5.6.0"
-  },
-  "devDependencies": {
-    "@fringeworks/rollup-plugin-dist-package": "^0.9.0",
-    "@types/fs-extra": "^11.0.4",
-    "@types/node": "^25.5.0",
-    "@vitest/coverage-v8": "^4.1.11",
-    "prettier": "^3.8.3",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-packagejson": "^3.0.2",
+    "remeda": "^2.34.0",
+    "sass": "^1.105.0",
+    "type-fest": "^5.6.0",
+    "typescript-eslint": "^8.71.2"
+  },
+  "devDependencies": {
+    "@fringeworks/rollup-plugin-dist-package": "^0.9.1",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.9.9",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^10.12.0",
+    "prettier": "^3.9.10",
     "rollup-plugin-copy": "^3.5.0",
     "tsdown": "^0.23.1",
-    "tsx": "^4.22.3",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
+  },
+  "peerDependencies": {
+    "eslint": "^10.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
+    "prettier": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
   },
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
 }

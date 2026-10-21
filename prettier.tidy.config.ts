@@ -1,8 +1,4 @@
-import type { Options } from 'prettier';
-import base from './prettier.config.ts';
+// 自身の設定には、公開前のソースの createPrettierConfig を使う
+import createPrettierConfig from './src/createPrettierConfig/createPrettierConfig.ts';
 
-const config: Options = {
-  ...base,
-  organizeImportsSkipDestructiveCodeActions: false,
-};
-export default config;
+export default createPrettierConfig({ removeUnusedImports: true });

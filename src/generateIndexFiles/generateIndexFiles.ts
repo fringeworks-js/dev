@@ -233,8 +233,5 @@ function _generateIndexFiles(
 }
 
 function _createRegex(str: string) {
-  return new RegExp(
-    `^${str.replace(/[.*+?^=!:${}()|\[\]\/\\]/g, '\\$&')}$`,
-    'i',
-  );
+  return new RegExp(`^${str.replace(/[.*+?^=!:${}()|[\]/\\]/g, '\\$&')}$`, 'i');
 }

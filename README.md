@@ -122,6 +122,51 @@ The TypeScript settings shared by the `@fringeworks` packages are included as `t
 
 The settings assume that a bundler (tsdown and so on) builds the package and tsc only type-checks it (`noEmit: true`). In addition to `strict`, they enable `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns` and more. Settings with paths such as `include` are not included, because they cannot be resolved relative to the package that loads them.
 
+### Shared ESLint config
+
+Creates the ESLint config (flat config) shared by the `@fringeworks` packages. Install `eslint` and `typescript` in the package that uses it.
+
+```js
+// eslint.config.js
+import createESLintConfig from '@fringeworks/dev/createESLintConfig';
+
+export default createESLintConfig(import.meta.dirname);
+```
+
+For React packages, specify `react: true`. Add package-specific settings after it with `defineConfig`.
+
+```js
+// eslint.config.js
+import createESLintConfig from '@fringeworks/dev/createESLintConfig';
+import { defineConfig } from 'eslint/config';
+import storybook from 'eslint-plugin-storybook';
+
+export default defineConfig([
+  createESLintConfig(import.meta.dirname, { react: true }),
+  storybook.configs['flat/recommended'],
+]);
+```
+
+### Shared Prettier config
+
+Creates the Prettier config shared by the `@fringeworks` packages. Install `prettier` and `typescript` in the package that uses it. The plugins (`prettier-plugin-organize-imports` and `prettier-plugin-packagejson`) are bundled, so you don't need to install them.
+
+```ts
+// prettier.config.ts
+import createPrettierConfig from '@fringeworks/dev/createPrettierConfig';
+
+export default createPrettierConfig();
+```
+
+Put the config that also removes unused imports in a separate file to pass with `--config`.
+
+```ts
+// prettier.tidy.config.ts
+import createPrettierConfig from '@fringeworks/dev/createPrettierConfig';
+
+export default createPrettierConfig({ removeUnusedImports: true });
+```
+
 ## API
 
 | Function                                            | Description                                                                   |
@@ -132,6 +177,8 @@ The settings assume that a bundler (tsdown and so on) builds the package and tsc
 | `addJsExtensions(dir)`                              | Adds extensions to relative imports in built JavaScript files                 |
 | `createExternal(options?)`                          | Creates a function for a bundler's `external` option                          |
 | `createSassClassNameFunction(classNames, options?)` | Creates a Sass custom function that returns class names defined in TypeScript |
+| `createESLintConfig(rootDir, options?)`             | Creates the shared ESLint config                                              |
+| `createPrettierConfig(options?)`                    | Creates the shared Prettier config                                            |
 | `generatePublishPackageJson(options?)`              | Generates a `package.json` for publishing                                     |
 | `editJsonFile(jsonFilePath, editor)`                | Edits a JSON file                                                             |
 | `installFromLocal(localNodeModulesPath, options?)`  | Copies locally placed packages into `node_modules`                            |
@@ -361,6 +408,64 @@ If the argument is not a string, or no class name is defined for the key, it rai
 | `prefix?` | `string` | A string put before the argument when looking up the key |
 | `suffix?` | `string` | A string put after the argument when looking up the key  |
 
+### `createESLintConfig`
+
+```ts
+createESLintConfig(
+  rootDir: string,
+  options?: CreateESLintConfigOptions,
+): Linter.Config[]
+```
+
+Creates the ESLint config (flat config) shared by the `@fringeworks` packages.
+
+- Ignores `dist`, `coverage`, `storybook-static` and `test-results`
+- Applies the recommended configs of `@eslint/js` and `typescript-eslint` to every `.ts` and `.tsx` file in the package
+- Reports `any` (`@typescript-eslint/no-explicit-any`) as an error, except in test files (`*.test.*`, `*.test-d.*` and files under `e2e/`)
+- Reports unused variables (`@typescript-eslint/no-unused-vars`) as an error. Names starting with `_` and names destructured to take the rest with a rest element are allowed
+
+It contains no rules that need type information, so it can also lint files that are not in `include` of tsconfig.
+
+| Parameter  | Type                        | Description                                                                                                 |
+| ---------- | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `rootDir`  | `string`                    | The root directory of the package (`import.meta.dirname`). Passed to `tsconfigRootDir` of typescript-eslint |
+| `options?` | `CreateESLintConfigOptions` | The options below                                                                                           |
+
+| Option   | Type      | Description                                                                     |
+| -------- | --------- | ------------------------------------------------------------------------------- |
+| `react?` | `boolean` | Adds the recommended config of `eslint-plugin-react-hooks`. Defaults to `false` |
+
+`rootDir` prevents the error that typescript-eslint raises when it cannot infer `tsconfigRootDir` because the configs of multiple packages are loaded in the same process (for example, when a multi-root workspace is opened in VS Code).
+
+### `createPrettierConfig`
+
+```ts
+createPrettierConfig(
+  options?: CreatePrettierConfigOptions,
+): Config
+```
+
+Creates the Prettier config shared by the `@fringeworks` packages.
+
+| Setting          | Value                                                             |
+| ---------------- | ----------------------------------------------------------------- |
+| `arrowParens`    | `'always'`                                                        |
+| `semi`           | `true`                                                            |
+| `useTabs`        | `false`                                                           |
+| `tabWidth`       | `2`                                                               |
+| `bracketSpacing` | `true`                                                            |
+| `singleQuote`    | `true`                                                            |
+| `printWidth`     | `80`                                                              |
+| `trailingComma`  | `'all'`                                                           |
+| `endOfLine`      | `'auto'`                                                          |
+| `plugins`        | `prettier-plugin-organize-imports`, `prettier-plugin-packagejson` |
+
+The plugins are passed as loaded modules, so you don't need to install them in the package that uses the config.
+
+| Option                 | Type      | Description                                                         |
+| ---------------------- | --------- | ------------------------------------------------------------------- |
+| `removeUnusedImports?` | `boolean` | Removes unused imports when organizing imports. Defaults to `false` |
+
 ### `generatePublishPackageJson`
 
 ```ts
@@ -573,6 +678,8 @@ Returns `true` if `itemPath` is of the kind `entryType`, matches `include`, and 
 | `ExternalFunction`                   | A function for the `external` option                                      |
 | `ConditionOptions`                   | The value passed to condition functions of `createExternal`               |
 | `CreateSassClassNameFunctionOptions` | Options of `createSassClassNameFunction`                                  |
+| `CreateESLintConfigOptions`          | Options of `createESLintConfig`                                           |
+| `CreatePrettierConfigOptions`        | Options of `createPrettierConfig`                                         |
 | `GeneratePublishPackageJsonOptions`  | Options of `generatePublishPackageJson`                                   |
 | `InstallFromLocalOptions`            | Options of `installFromLocal`                                             |
 | `SetVersionOptions`                  | Options of `setVersion`                                                   |

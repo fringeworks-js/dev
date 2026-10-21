@@ -11,6 +11,8 @@ import { assertExists } from '../_internal/assertPath';
  */
 function editJsonFile(
   jsonFilePath: string,
+  // JSONの形は呼び出し側によって異なるため、プロパティを自由に参照できるようにする
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   editor: ((obj: any) => object) | object,
 ) {
   const resolvedJsonFilePath = path.resolve(jsonFilePath);
