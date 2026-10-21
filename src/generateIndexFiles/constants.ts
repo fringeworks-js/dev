@@ -90,3 +90,9 @@ export const DEFAULT_EXPORT_DEFAULT: IsMatchingPathCondition[] = [];
  * exportAllAsのデフォルト値
  */
 export const DEFAULT_EXPORT_ALL_AS: IsMatchingPathCondition[] = [];
+
+/**
+ * importSideEffectのデフォルト値
+ * 指定しなくても、exportの無いファイルは副作用のためにimportする
+ */
+export const DEFAULT_IMPORT_SIDE_EFFECT: IsMatchingPathCondition[] = [];

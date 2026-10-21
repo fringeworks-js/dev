@@ -237,28 +237,31 @@ generateIndexFiles(options?: GenerateIndexFilesOptions): string[]
 ```
 
 Walks the directories under `srcPath` recursively and generates an index file in each of them.\
-Files and directories that match `include` and do not match `exclude` are exported. The export form is decided by checking `exportAllAs`, `exportDefault`, `exportDefaultAndNamed`, `exportDefaultAs`, `exportTypeAll`, and `exportAll` in that order and using the first match. The broad `exportAll` is checked last so that more specific forms take precedence. If none matches, `export { default as name } from './name';` is used.\
-No index file is generated in a directory that has nothing to export. If an old index file is left in such a directory, it is kept with a warning and is not exported from the parent's index file either.\
-Returns the absolute paths of the generated index files. Throws if `srcPath` is not a directory, or if a file or directory name is not a valid identifier (such as `my-file.ts`) in a form that exports it by name.
+Files and directories that match `include` and do not match `exclude` are exported. The export form is decided by checking `importSideEffect`, `exportAllAs`, `exportDefault`, `exportDefaultAndNamed`, `exportDefaultAs`, `exportTypeAll`, and `exportAll` in that order and using the first match. The broad `exportAll` is checked last so that more specific forms take precedence. If none matches, `export { default as name } from './name';` is used.\
+If a file matches a form that requires a default export (`exportDefault`, `exportDefaultAndNamed` or `exportDefaultAs`) but has no default export, the form is chosen from the content of the file: `exportAll` if it has named value exports, `exportTypeAll` if it only exports types, and `importSideEffect` if it exports nothing. The content is read with the TypeScript syntax tree, so `typescript` is required.\
+Imports for side effects (`import './name';`) are placed before the exports.\
+No index file is generated in a directory that has nothing to export. If an old index file is left in such a directory, it is kept with a warning and is not exported from the parent's index file either. However, a directory that contains only an index file is treated as having a handwritten index file: it is kept as is and exported from the parent (it matches `HAS_INDEX_DIR`).\
+Returns the absolute paths of the generated index files. Throws if `srcPath` is not a directory, or if a file or directory name is not a valid identifier in a form that exports it by name. Kebab-case names (such as `scroll-snap`) are exported by their camelCase names (`scrollSnap`).
 
-| Option                   | Type                              | Description                                                                                                                                       |
-| ------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `srcPath?`               | `string`                          | The directory to process. Defaults to `'src'`                                                                                                     |
-| `indexFileName?`         | `string`                          | The name of index files. Defaults to `'index.ts'`                                                                                                 |
-| `ignore?`                | `IsMatchingPathCondition[]`       | Directories in which no index file is generated. Their contents are not walked either. Defaults to `[PRIVATE]`                                    |
-| `include?`               | `IsMatchingPathCondition[]`       | What to export. Defaults to `[TS_JS, HAS_INDEX_DIR]`                                                                                              |
-| `exclude?`               | `IsMatchingPathCondition[]`       | What not to export even if it matches `include`. Defaults to `[TEST_DIR, TEST_FILE, PRIVATE]`                                                     |
-| `omitNamedWithDefault?`  | `boolean`                         | Drops named exports when the same index file has a default export, and makes `exportDefaultAndNamed` export only the default. Defaults to `false` |
-| `exportAll?`             | `IsMatchingPathCondition[]`       | What to export as `export * from './name';`. Defaults to `[CONSTANTS, HAS_INDEX_DIR]`                                                             |
-| `exportAllAs?`           | `IsMatchingPathCondition[]`       | What to export as `export * as name from './name';`. Defaults to `[]`                                                                             |
-| `exportDefault?`         | `IsMatchingPathCondition[]`       | What to export as `export { default } from './name';`. Defaults to `[]`                                                                           |
-| `exportDefaultAndNamed?` | `IsMatchingPathCondition[]`       | What to export as `export { default, default as name } from './name';`. Defaults to `[MAIN_FILE]`                                                 |
-| `exportDefaultAs?`       | `IsMatchingPathCondition[]`       | What to export as `export { default as name } from './name';`                                                                                     |
-| `exportTypeAll?`         | `IsMatchingPathCondition[]`       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                           |
-| `dryRun?`                | `boolean`                         | Prints the generated content to the console instead of writing files                                                                              |
-| `transform?`             | `(exports: string[]) => string[]` | Edits the array of export statements before output                                                                                                |
-| `eol?`                   | `string`                          | The line ending. Defaults to `'\n'`                                                                                                               |
-| `encoding?`              | `BufferEncoding`                  | The output encoding. Defaults to `'utf8'`                                                                                                         |
+| Option                   | Type                                                              | Description                                                                                                                                                                               |
+| ------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `srcPath?`               | `string`                                                          | The directory to process. Defaults to `'src'`                                                                                                                                             |
+| `indexFileName?`         | `string`                                                          | The name of index files. Defaults to `'index.ts'`                                                                                                                                         |
+| `ignore?`                | `IsMatchingPathCondition[]`                                       | Directories in which no index file is generated. Their contents are not walked either. Defaults to `[PRIVATE]`                                                                            |
+| `include?`               | `IsMatchingPathCondition[]`                                       | What to export. Defaults to `[TS_JS, HAS_INDEX_DIR]`                                                                                                                                      |
+| `exclude?`               | `IsMatchingPathCondition[]`                                       | What not to export even if it matches `include`. Defaults to `[TEST_DIR, TEST_FILE, PRIVATE]`                                                                                             |
+| `omitNamedWithDefault?`  | `boolean`                                                         | Drops named exports when the same index file has a default export, and makes `exportDefaultAndNamed` export only the default. Defaults to `false`                                         |
+| `exportAll?`             | `IsMatchingPathCondition[]`                                       | What to export as `export * from './name';`. Defaults to `[CONSTANTS, HAS_INDEX_DIR]`                                                                                                     |
+| `exportAllAs?`           | `IsMatchingPathCondition[]`                                       | What to export as `export * as name from './name';`. Defaults to `[]`                                                                                                                     |
+| `exportDefault?`         | `IsMatchingPathCondition[]`                                       | What to export as `export { default } from './name';`. Defaults to `[]`                                                                                                                   |
+| `exportDefaultAndNamed?` | `IsMatchingPathCondition[]`                                       | What to export as `export { default, default as name } from './name';`. Defaults to `[MAIN_FILE]`                                                                                         |
+| `exportDefaultAs?`       | `IsMatchingPathCondition[]`                                       | What to export as `export { default as name } from './name';`                                                                                                                             |
+| `importSideEffect?`      | `IsMatchingPathCondition[]`                                       | What to import for side effects as `import './name';` (not exported). Defaults to `[]`. Files that export nothing use this form even if not specified                                     |
+| `exportTypeAll?`         | `IsMatchingPathCondition[]`                                       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                                                                   |
+| `dryRun?`                | `boolean`                                                         | Prints the generated content to the console instead of writing files                                                                                                                      |
+| `transform?`             | `(exports: string[], context: IndexTransformContext) => string[]` | Edits the array of export statements before output. `context.indexPath` is the path of the index file to write (a `/`-separated path based on `srcPath`, such as `src/with-css/index.ts`) |
+| `eol?`                   | `string`                                                          | The line ending. Defaults to `'\n'`                                                                                                                                                       |
+| `encoding?`              | `BufferEncoding`                                                  | The output encoding. Defaults to `'utf8'`                                                                                                                                                 |
 
 #### Constants
 
@@ -284,6 +287,7 @@ Conditions for the options can be imported from `@fringeworks/dev/generateIndexF
 | `DEFAULT_EXPORT_DEFAULT`           | The default of `exportDefault`                                                                                              |
 | `DEFAULT_EXPORT_DEFAULT_AND_NAMED` | The default of `exportDefaultAndNamed`                                                                                      |
 | `DEFAULT_EXPORT_TYPE_ALL`          | The default of `exportTypeAll`                                                                                              |
+| `DEFAULT_IMPORT_SIDE_EFFECT`       | The default of `importSideEffect`                                                                                           |
 
 To add a condition to a default, combine it with the constants.
 
@@ -464,6 +468,7 @@ Creates the ESLint config (flat config) shared by the `@fringeworks` packages.
 - Applies the recommended configs of `@eslint/js` and `typescript-eslint` to every `.ts` and `.tsx` file in the package
 - Reports `any` (`@typescript-eslint/no-explicit-any`) as an error, except in test and story files (`*.test.*`, `*.test-d.*` and files under `e2e/` and `stories/`)
 - Reports unused variables (`@typescript-eslint/no-unused-vars`) as an error. Names starting with `_` and names destructured to take the rest with a rest element are allowed
+- Warns when the body of `if`, `else`, `for`, `while` or `do` is not wrapped in `{}` (`curly`). `--fix` adds the braces. Arrow function bodies are not affected
 
 It contains no rules that need type information, so it can also lint files that are not in `include` of tsconfig.
 
@@ -746,6 +751,7 @@ Returns `true` if `itemPath` is of the kind `entryType`, matches `include`, and 
 | Type                                 | Description                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------- |
 | `GenerateIndexFilesOptions`          | Options of `generateIndexFiles`                                           |
+| `IndexTransformContext`              | The second argument of `transform` of `generateIndexFiles`                |
 | `CreateExportsOptions`               | Options of `createExports`                                                |
 | `WriteExportsOptions`                | Options of `writeExports`                                                 |
 | `CreateExternalOptions`              | Options of `createExternal`                                               |

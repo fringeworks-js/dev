@@ -1,6 +1,6 @@
 {
   "name": "@fringeworks/dev",
-  "version": "0.12.0",
+  "version": "0.13.1",
   "private": true,
   "description": "A library some will find handy, built for developers.",
   "keywords": [
@@ -44,6 +44,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "indexes": "tsx scripts/indexes.ts",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "release": "pnpm build && npm publish ./dist",
     "test": "vitest",
     "tidy": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\" --config ./prettier.tidy.config.ts",

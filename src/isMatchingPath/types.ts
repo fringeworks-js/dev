@@ -70,10 +70,7 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
      * - RegExp: 指定された正規表現に一致
      */
     conditions:
-      | string
-      | RegExp
-      | ConditionFn<O>
-      | (string | RegExp | ConditionFn<O>)[];
+      string | RegExp | ConditionFn<O> | (string | RegExp | ConditionFn<O>)[];
   };
 
 /**

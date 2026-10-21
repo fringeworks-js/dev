@@ -2,8 +2,9 @@ import fs from 'fs-extra';
 import path from 'path';
 import { assertDirectory } from '../_internal/assertPath';
 import compareNames from '../_internal/compareNames';
+import detectExports from '../_internal/detectExports';
 import type { ExportForm } from '../_internal/exportForms';
-import { EXPORT_FORMS, isIdentifierName } from '../_internal/exportForms';
+import { EXPORT_FORMS, toExportName } from '../_internal/exportForms';
 import toPosixPath from '../_internal/toPosixPath';
 import isMatchingPath, { type IsMatchingPathOptions } from '../isMatchingPath';
 import {
@@ -14,6 +15,7 @@ import {
   DEFAULT_EXPORT_DEFAULT_AND_NAMED,
   DEFAULT_EXPORT_TYPE_ALL,
   DEFAULT_IGNORE,
+  DEFAULT_IMPORT_SIDE_EFFECT,
   DEFAULT_INCLUDE,
 } from './constants';
 import type { GenerateIndexFilesOptions } from './types';
@@ -24,6 +26,7 @@ import type { GenerateIndexFilesOptions } from './types';
  * 範囲の広い`exportAll`は最後に判定し、個別の指定を優先する
  */
 const EXPORT_FORM_ORDER = [
+  'importSideEffect',
   'exportAllAs',
   'exportDefault',
   'exportDefaultAndNamed',
@@ -39,7 +42,8 @@ type ExportItem = {
   form: ExportForm;
 
   /**
-   * export名・モジュール名に使う名前
+   * モジュール名（拡張子を除いたファイル名・ディレクトリ名）
+   * export名に使えない場合はキャメルケースにしてexport名に使う
    */
   name: string;
 
@@ -70,6 +74,7 @@ type PrivateGenerateIndexFilesResult = {
  * 対象のディレクトリ配下のindexファイルを作成する\
  * 対象ファイルで出力形式が特に指定されていない場合は下記の形式で出力\
  * `export { default as ${name} } from './${name}';`\
+ * デフォルトエクスポートを前提とする形式で、ファイルにデフォルトエクスポートが無い場合は、中身に合わせて`exportAll`・`exportTypeAll`・`importSideEffect`にする\
  * `srcPath`がディレクトリでない場合や、名前がexport名に使えない場合は例外を投げる
  */
 export default function generateIndexFiles(
@@ -87,6 +92,7 @@ export default function generateIndexFiles(
     exportDefault = DEFAULT_EXPORT_DEFAULT,
     exportDefaultAndNamed = DEFAULT_EXPORT_DEFAULT_AND_NAMED,
     exportTypeAll = DEFAULT_EXPORT_TYPE_ALL,
+    importSideEffect = DEFAULT_IMPORT_SIDE_EFFECT,
     eol = '\n',
     encoding = 'utf8',
     ...rest
@@ -106,6 +112,7 @@ export default function generateIndexFiles(
     exportDefault,
     exportDefaultAndNamed,
     exportTypeAll,
+    importSideEffect,
     eol,
     encoding,
     ...rest,
@@ -174,12 +181,20 @@ function _generateIndexFiles(
         EXPORT_FORM_ORDER.find((candidate) =>
           isMatchingPath(itemPath, options[candidate], isMatchingPathOptions),
         ) ?? 'exportDefaultAs';
-      exportItems.push({ form, name, itemPath });
+      exportItems.push({
+        form: isDirectory ? form : _fitFormToFile(form, itemPath),
+        name,
+        itemPath,
+      });
     }
   }
 
   const indexPath = path.posix.join(targetPath, indexFileName);
   if (!exportItems.length) {
+    if (items.length && items.every((item) => indexRegex.test(item))) {
+      // indexファイルしか無いディレクトリは、手書きのindexファイルとして残して親からexportする
+      return { children: items, indexPaths, hasIndex: true };
+    }
     if (items.some((item) => indexRegex.test(item))) {
       console.warn(
         `${indexPath}: There is nothing to export. The existing index file is left as is and is not exported from the parent directory.`,
@@ -206,15 +221,21 @@ function _generateIndexFiles(
       );
       continue;
     }
-    if (exportForm.exportsName && !isIdentifierName(name)) {
+    const exportName = exportForm.exportsName ? toExportName(name) : name;
+    if (exportName === undefined) {
       throw new Error(
         `"${itemPath}" cannot be exported as "${name}" because it is not a valid identifier. Rename it, or export it with exportDefault, exportAll or exportTypeAll.`,
       );
     }
-    exports.push(exportForm.generate(name));
+    exports.push(exportForm.generate(exportName, name));
   }
+  // 副作用のためのimportはexportより前に置く
+  exports = [
+    ...exports.filter((line) => line.startsWith('import ')),
+    ...exports.filter((line) => !line.startsWith('import ')),
+  ];
   if (transform) {
-    exports = transform(exports);
+    exports = transform(exports, { indexPath });
   }
 
   if (!dryRun) {
@@ -230,6 +251,25 @@ function _generateIndexFiles(
   indexPaths.push(path.resolve(indexPath));
 
   return { children: items, indexPaths, hasIndex: true };
+}
+
+/**
+ * デフォルトエクスポートを前提とする形式で、ファイルにデフォルトエクスポートが無い場合は、中身に合わせた形式にする
+ * @param form 条件から決まった形式
+ * @param itemPath ファイルのパス
+ */
+function _fitFormToFile(form: ExportForm, itemPath: string): ExportForm {
+  if (!EXPORT_FORMS[form].requiresDefault) {
+    return form;
+  }
+  const { hasDefault, hasValue, hasType } = detectExports(itemPath);
+  if (hasDefault) {
+    return form;
+  }
+  if (hasValue) {
+    return 'exportAll';
+  }
+  return hasType ? 'exportTypeAll' : 'importSideEffect';
 }
 
 function _createRegex(str: string) {

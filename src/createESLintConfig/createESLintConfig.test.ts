@@ -78,6 +78,40 @@ describe('createESLintConfig', () => {
     ).toEqual(['@typescript-eslint/no-unused-vars']);
   });
 
+  it.each([
+    'export function a(b: boolean) {\n  if (b) return 1;\n  return 0;\n}\n',
+    'export function a(b: boolean) {\n  if (b) {\n    return 1;\n  } else return 0;\n}\n',
+    'export function a(b: number[]) {\n  for (const c of b) console.log(c);\n}\n',
+    'export function a(b: number) {\n  while (b > 0) b--;\n}\n',
+  ])('本体を {} で囲まないと警告する（%#）', async (code) => {
+    const [result] = await createESLint().lintText(code, {
+      filePath: 'src/a.ts',
+    });
+    expect(result!.messages).toMatchObject([{ ruleId: 'curly', severity: 1 }]);
+  });
+
+  it('{} で囲まない本体は --fix で囲む', async () => {
+    const eslint = new ESLint({
+      cwd: rootDir,
+      overrideConfigFile: true,
+      overrideConfig: createESLintConfig(rootDir),
+      fix: true,
+    });
+    const [result] = await eslint.lintText(
+      'export function a(b: boolean) {\n  if (b) return 1;\n  return 0;\n}\n',
+      { filePath: 'src/a.ts' },
+    );
+    expect(result!.output).toBe(
+      'export function a(b: boolean) {\n  if (b) {return 1;}\n  return 0;\n}\n',
+    );
+  });
+
+  it('アロー関数の本体は {} で囲まなくてもよい', async () => {
+    expect(
+      await lint('export const a = (b: number) => b * 2;\n', 'src/a.ts'),
+    ).toEqual([]);
+  });
+
   it('.tsx と src の外のファイルも対象にする', async () => {
     const code = 'export const a: any = 1;\n';
     expect(await lint(code, 'src/a.tsx')).toHaveLength(1);

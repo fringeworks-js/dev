@@ -103,15 +103,27 @@ export type GenerateIndexFilesOptions = {
   exportTypeAll?: IsMatchingPathCondition[];
 
   /**
+   * 副作用のためにimportしたいもの（exportはしない）\
+   * 指定しなくても、exportの無いファイルはこの形式になる
+   *
+   * ```
+   * import './abc';
+   * ```
+   * @default DEFAULT_IMPORT_SIDE_EFFECT（`[]`）
+   */
+  importSideEffect?: IsMatchingPathCondition[];
+
+  /**
    * お試し\
    * ファイルの操作は行わない
    */
   dryRun?: boolean;
 
   /**
-   * 出力前の編集
+   * 出力前の編集\
+   * 第2引数で、出力するindexファイルのパスを受け取れる
    */
-  transform?: (exports: string[]) => string[];
+  transform?: (exports: string[], context: IndexTransformContext) => string[];
 
   /**
    * 出力の改行コード
@@ -126,4 +138,14 @@ export type GenerateIndexFilesOptions = {
    * @default `utf8`
    */
   encoding?: BufferEncoding;
+};
+
+/**
+ * `transform`の第2引数
+ */
+export type IndexTransformContext = {
+  /**
+   * 出力するindexファイルのパス（`srcPath`を基準にした`/`区切りのパス。例: `src/with-css/index.ts`）
+   */
+  indexPath: string;
 };

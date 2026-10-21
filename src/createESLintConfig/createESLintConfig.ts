@@ -52,6 +52,8 @@ export default function createESLintConfig(
         },
       },
       rules: {
+        // if / else / for / while / do の本体は、1文でも {} で囲む（--fix で直せるので warn にする）
+        curly: ['warn', 'all'],
         '@typescript-eslint/no-explicit-any': 'error',
         // `_` で始まる名前と、rest で残りを取り出すために分割代入した名前は、使っていなくても許容する
         '@typescript-eslint/no-unused-vars': [

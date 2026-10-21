@@ -9,6 +9,11 @@ import {
 import { NAMESPACE_DIR } from './constants';
 import generateIndexFiles from './generateIndexFiles';
 
+/**
+ * デフォルトエクスポートのあるファイルの内容
+ */
+const D = 'export default 1;\n';
+
 describe('generateIndexFiles', () => {
   let dir: string;
   let info: MockInstance<typeof console.info>;
@@ -26,12 +31,12 @@ describe('generateIndexFiles', () => {
 
   it('既定の設定で機能・カテゴリー・ルートのindexファイルを生成する', () => {
     dir = createTempDir({
-      'number/keepInRange/constants.ts': '',
-      'number/keepInRange/keepInRange.ts': '',
-      'number/keepInRange/keepInRange.test.ts': '',
-      'number/keepInRange/types.ts': '',
-      'number/keepInRange/helper.d.ts': '',
-      '_internal/helper.ts': '',
+      'number/keepInRange/constants.ts': D,
+      'number/keepInRange/keepInRange.ts': D,
+      'number/keepInRange/keepInRange.test.ts': D,
+      'number/keepInRange/types.ts': D,
+      'number/keepInRange/helper.d.ts': D,
+      '_internal/helper.ts': D,
     });
     const indexPaths = generateIndexFiles({ srcPath: dir });
 
@@ -56,13 +61,13 @@ describe('generateIndexFiles', () => {
   });
 
   it('改行コードの既定値はLF', () => {
-    dir = createTempDir({ 'a.ts': '', 'b.ts': '' });
+    dir = createTempDir({ 'a.ts': D, 'b.ts': D });
     generateIndexFiles({ srcPath: dir });
     expect(readFile(dir, 'index.ts')).not.toContain('\r');
   });
 
   it('eolを指定できる', () => {
-    dir = createTempDir({ 'a.ts': '' });
+    dir = createTempDir({ 'a.ts': D });
     generateIndexFiles({ srcPath: dir, eol: '\r\n' });
     expect(readFile(dir, 'index.ts')).toBe(
       "export { default as a } from './a';\r\n",
@@ -70,7 +75,7 @@ describe('generateIndexFiles', () => {
   });
 
   it('大文字・小文字を区別せずに名前順で並べる', () => {
-    dir = createTempDir({ 'b.ts': '', 'C.ts': '', 'a.ts': '' });
+    dir = createTempDir({ 'b.ts': D, 'C.ts': D, 'a.ts': D });
     generateIndexFiles({ srcPath: dir });
     expect(readFile(dir, 'index.ts')).toBe(
       [
@@ -84,7 +89,7 @@ describe('generateIndexFiles', () => {
 
   describe('dryRun', () => {
     it('ファイルを書き込まず、本番と同じ内容を出力する', () => {
-      dir = createTempDir({ 'foo/foo.ts': '', 'foo/bar/bar.ts': '' });
+      dir = createTempDir({ 'foo/foo.ts': D, 'foo/bar/bar.ts': D });
       const dryRunPaths = generateIndexFiles({ srcPath: dir, dryRun: true });
       const dryRunOutput = info.mock.calls.map((args) => String(args[0]));
       expect(exists(dir, 'index.ts')).toBe(false);
@@ -109,8 +114,9 @@ describe('generateIndexFiles', () => {
   describe('既存のindexファイル', () => {
     it('exportするものが無いディレクトリのindexファイルは残し、親からexportしない', () => {
       dir = createTempDir({
-        'a.ts': '',
+        'a.ts': D,
         'stale/index.ts': "export * from './removed';\n",
+        'stale/stale.test.ts': '',
       });
       generateIndexFiles({ srcPath: dir });
       expect(readFile(dir, 'stale/index.ts')).toBe(
@@ -122,6 +128,18 @@ describe('generateIndexFiles', () => {
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('There is nothing to export'),
       );
+    });
+
+    it('indexファイルしか無いディレクトリは手書きのindexファイルとして残し、親からexportする', () => {
+      const handwritten =
+        "import '../../foo/styles.css';\n\nexport { default, default as foo } from '../../foo';\n";
+      dir = createTempDir({ 'with-css/foo/index.ts': handwritten });
+      generateIndexFiles({ srcPath: dir });
+      expect(readFile(dir, 'with-css/foo/index.ts')).toBe(handwritten);
+      expect(readFile(dir, 'with-css/index.ts')).toBe(
+        "export * from './foo';\n",
+      );
+      expect(warn).not.toHaveBeenCalled();
     });
 
     it('ignoreで処理しないディレクトリは既存のindexファイルがあれば親からexportする', () => {
@@ -142,14 +160,32 @@ describe('generateIndexFiles', () => {
 
   describe('名前', () => {
     it('名前がexport名に使えない場合は例外を投げる', () => {
-      dir = createTempDir({ 'my-file.ts': '' });
+      dir = createTempDir({ '1st.ts': D });
       expect(() => generateIndexFiles({ srcPath: dir })).toThrow(
         'not a valid identifier',
       );
     });
 
+    it('ケバブケースの名前はキャメルケースにしてexport名に使う', () => {
+      dir = createTempDir({
+        'scroll-snap/scroll-snap.ts': D,
+        'my-file.ts': D,
+      });
+      generateIndexFiles({ srcPath: dir });
+      expect(readFile(dir, 'scroll-snap/index.ts')).toBe(
+        "export { default, default as scrollSnap } from './scroll-snap';\n",
+      );
+      expect(readFile(dir, 'index.ts')).toBe(
+        [
+          "export { default as myFile } from './my-file';",
+          "export * from './scroll-snap';",
+          '',
+        ].join('\n'),
+      );
+    });
+
     it('名前をexport名に使わない形式なら例外を投げない', () => {
-      dir = createTempDir({ 'my-file.ts': '' });
+      dir = createTempDir({ 'my-file.ts': D });
       generateIndexFiles({
         srcPath: dir,
         exportDefault: [{ valueType: 'base', conditions: 'my-file' }],
@@ -160,7 +196,7 @@ describe('generateIndexFiles', () => {
     });
 
     it('予約語や非ASCIIの名前は使える', () => {
-      dir = createTempDir({ 'class.ts': '', 'ほげ.ts': '' });
+      dir = createTempDir({ 'class.ts': D, 'ほげ.ts': D });
       generateIndexFiles({ srcPath: dir });
       expect(readFile(dir, 'index.ts')).toBe(
         [
@@ -172,7 +208,7 @@ describe('generateIndexFiles', () => {
     });
 
     it('ディレクトリ名の.以降を拡張子として扱わない', () => {
-      dir = createTempDir({ 'a.b/c.ts': '' });
+      dir = createTempDir({ 'a.b/c.ts': D });
       generateIndexFiles({ srcPath: dir });
       expect(readFile(dir, 'index.ts')).toBe("export * from './a.b';\n");
     });
@@ -180,10 +216,10 @@ describe('generateIndexFiles', () => {
 
   it('omitNamedWithDefaultはデフォルトエクスポートがある場合に名前付きエクスポートを除く', () => {
     dir = createTempDir({
-      'foo/foo.ts': '',
-      'foo/helper.ts': '',
-      'foo/constants.ts': '',
-      'foo/types.ts': '',
+      'foo/foo.ts': D,
+      'foo/helper.ts': D,
+      'foo/constants.ts': D,
+      'foo/types.ts': D,
     });
     generateIndexFiles({ srcPath: dir, omitNamedWithDefault: true });
     expect(readFile(dir, 'foo/index.ts')).toBe(
@@ -196,7 +232,7 @@ describe('generateIndexFiles', () => {
   });
 
   it('omitNamedWithDefaultでもデフォルトエクスポートが無ければ名前付きエクスポートを残す', () => {
-    dir = createTempDir({ 'a.ts': '' });
+    dir = createTempDir({ 'a.ts': D });
     generateIndexFiles({ srcPath: dir, omitNamedWithDefault: true });
     expect(readFile(dir, 'index.ts')).toBe(
       "export { default as a } from './a';\n",
@@ -205,9 +241,9 @@ describe('generateIndexFiles', () => {
 
   it('NAMESPACE_DIRで名前空間としてexportする', () => {
     dir = createTempDir({
-      'tools/a.ts': '',
-      'Widget/a.ts': '',
-      'feature/feature.ts': '',
+      'tools/a.ts': D,
+      'Widget/a.ts': D,
+      'feature/feature.ts': D,
     });
     generateIndexFiles({ srcPath: dir, exportAllAs: [NAMESPACE_DIR] });
     expect(readFile(dir, 'index.ts')).toBe(
@@ -221,7 +257,7 @@ describe('generateIndexFiles', () => {
   });
 
   it('transformで出力前に編集できる', () => {
-    dir = createTempDir({ 'a.ts': '' });
+    dir = createTempDir({ 'a.ts': D });
     generateIndexFiles({
       srcPath: dir,
       transform: (exports) => ['// generated', ...exports],
@@ -231,8 +267,115 @@ describe('generateIndexFiles', () => {
     );
   });
 
+  it('transformの第2引数でindexファイルのパスを受け取れる', () => {
+    dir = createTempDir({ 'foo/foo.ts': D });
+    const indexPaths: string[] = [];
+    generateIndexFiles({
+      srcPath: dir,
+      transform: (exports, { indexPath }) => {
+        indexPaths.push(indexPath);
+        return exports;
+      },
+    });
+    expect(indexPaths).toEqual([
+      path.posix.join(dir.replaceAll('\\', '/'), 'foo/index.ts'),
+      path.posix.join(dir.replaceAll('\\', '/'), 'index.ts'),
+    ]);
+  });
+
+  describe('ファイルの中身に合わせた形式', () => {
+    it.each([
+      ['export default function a() {}\n'],
+      ['export default class A {}\n'],
+      ['const a = 1;\nexport { a as default };\n'],
+      ["export { default } from './b';\n"],
+    ])(
+      'デフォルトエクスポートがあれば条件どおりの形式にする（%s）',
+      (content) => {
+        dir = createTempDir({ 'a.ts': content, 'b.ts': D });
+        generateIndexFiles({ srcPath: dir });
+        expect(readFile(dir, 'index.ts')).toContain(
+          "export { default as a } from './a';",
+        );
+      },
+    );
+
+    it.each([
+      ['export const a = 1;\n'],
+      ['export function a() {}\n'],
+      ['export class A {}\n'],
+      ['export enum A {}\n'],
+      ['const a = 1;\nexport { a };\n'],
+      ["export * from './b';\n"],
+      ["export * as b from './b';\n"],
+    ])(
+      '値の名前付きエクスポートだけの場合はexportAllにする（%s）',
+      (content) => {
+        dir = createTempDir({ 'a.ts': content, 'b.ts': D });
+        generateIndexFiles({ srcPath: dir });
+        expect(readFile(dir, 'index.ts')).toContain("export * from './a';");
+      },
+    );
+
+    it.each([
+      ['export type A = string;\n'],
+      ['export interface A {}\n'],
+      ["export type { B } from './b';\n"],
+      ["export { type B } from './b';\n"],
+      ["export type * from './b';\n"],
+    ])('型のエクスポートだけの場合はexportTypeAllにする（%s）', (content) => {
+      dir = createTempDir({ 'a.ts': content, 'b.ts': D });
+      generateIndexFiles({ srcPath: dir });
+      expect(readFile(dir, 'index.ts')).toContain("export type * from './a';");
+    });
+
+    it('エクスポートが無い場合は副作用のためにimportし、exportより前に置く', () => {
+      dir = createTempDir({
+        'a.ts': D,
+        'styles.ts': "import './styles.css';\n",
+      });
+      generateIndexFiles({ srcPath: dir });
+      expect(readFile(dir, 'index.ts')).toBe(
+        ["import './styles';", "export { default as a } from './a';", ''].join(
+          '\n',
+        ),
+      );
+    });
+
+    it('親ディレクトリと同じ名前のファイルでも、デフォルトエクスポートが無ければ中身に合わせる', () => {
+      dir = createTempDir({ 'foo/foo.ts': 'export const foo = 1;\n' });
+      generateIndexFiles({ srcPath: dir });
+      expect(readFile(dir, 'foo/index.ts')).toBe("export * from './foo';\n");
+    });
+
+    it('デフォルトエクスポートを前提としない形式は中身を見ない', () => {
+      dir = createTempDir({ 'constants.ts': '', 'types.ts': '' });
+      generateIndexFiles({ srcPath: dir });
+      expect(readFile(dir, 'index.ts')).toBe(
+        [
+          "export * from './constants';",
+          "export type * from './types';",
+          '',
+        ].join('\n'),
+      );
+    });
+  });
+
+  it('importSideEffectで副作用のためにimportする', () => {
+    dir = createTempDir({ 'a.ts': D, 'setup.ts': D });
+    generateIndexFiles({
+      srcPath: dir,
+      importSideEffect: [{ valueType: 'name', conditions: 'setup' }],
+    });
+    expect(readFile(dir, 'index.ts')).toBe(
+      ["import './setup';", "export { default as a } from './a';", ''].join(
+        '\n',
+      ),
+    );
+  });
+
   it('srcPathがディレクトリでない場合は例外を投げる', () => {
-    dir = createTempDir({ 'a.ts': '' });
+    dir = createTempDir({ 'a.ts': D });
     expect(() =>
       generateIndexFiles({ srcPath: path.join(dir, 'a.ts') }),
     ).toThrow('is not a directory');
