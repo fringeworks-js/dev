@@ -167,6 +167,46 @@ import createPrettierConfig from '@fringeworks/dev/createPrettierConfig';
 export default createPrettierConfig({ removeUnusedImports: true });
 ```
 
+### 共通の tsdown の設定
+
+`@fringeworks` のパッケージで共通に使っている tsdown の設定を作ります。`src` 配下を ESM と CJS に出力し、`dist` 配下に公開用の `package.json` を生成します。使う側では `tsdown` をインストールします。
+
+```ts
+// tsdown.config.ts
+import createTsdownConfig from '@fringeworks/dev/createTsdownConfig';
+
+export default createTsdownConfig();
+```
+
+CSS を含むパッケージでは `css: true` を指定します。`exports` に渡したオプションは `createExports` に渡されます。
+
+```ts
+// tsdown.config.ts
+import createTsdownConfig from '@fringeworks/dev/createTsdownConfig';
+
+export default createTsdownConfig({
+  css: true,
+  exports: {
+    extraExports: { './*.css': './*/styles.css' },
+  },
+});
+```
+
+オプションに無い設定は、戻り値に書き足します。
+
+```ts
+// tsdown.config.ts
+import createTsdownConfig from '@fringeworks/dev/createTsdownConfig';
+import { defineConfig } from 'tsdown';
+
+const config = createTsdownConfig();
+
+export default defineConfig({
+  ...config,
+  outputOptions: { ...config.outputOptions, banner: '/* banner */' },
+});
+```
+
 ## API
 
 | 関数                                                | 説明                                                                 |
@@ -179,6 +219,7 @@ export default createPrettierConfig({ removeUnusedImports: true });
 | `createSassClassNameFunction(classNames, options?)` | TypeScript で定義したクラス名を返す Sass のカスタム関数を作る        |
 | `createESLintConfig(rootDir, options?)`             | 共通の ESLint の設定を作る                                           |
 | `createPrettierConfig(options?)`                    | 共通の Prettier の設定を作る                                         |
+| `createTsdownConfig(options?)`                      | 共通の tsdown の設定を作る                                           |
 | `generatePublishPackageJson(options?)`              | 公開用の `package.json` を生成する                                   |
 | `editJsonFile(jsonFilePath, editor)`                | JSON ファイルを編集する                                              |
 | `installFromLocal(localNodeModulesPath, options?)`  | ローカルに置いたパッケージを `node_modules` にコピーする             |
@@ -421,7 +462,7 @@ createESLintConfig(
 
 - `dist`・`coverage`・`storybook-static`・`test-results` を対象外にする
 - パッケージ内の全ての `.ts`・`.tsx` に `@eslint/js` と `typescript-eslint` の recommended を適用する
-- `any` の使用（`@typescript-eslint/no-explicit-any`）をエラーにする。テストのファイル（`*.test.*`・`*.test-d.*`・`e2e/` 配下）では許容する
+- `any` の使用（`@typescript-eslint/no-explicit-any`）をエラーにする。テストと stories のファイル（`*.test.*`・`*.test-d.*`・`e2e/` 配下・`stories/` 配下）では許容する
 - 使っていない変数（`@typescript-eslint/no-unused-vars`）をエラーにする。`_` で始まる名前と、rest で残りを取り出すために分割代入した名前は許容する
 
 型情報を使うルールは含めていないため、tsconfig の `include` に無いファイルも対象にできます。
@@ -465,6 +506,39 @@ createPrettierConfig(
 | オプション             | 型        | 説明                                                              |
 | ---------------------- | --------- | ----------------------------------------------------------------- |
 | `removeUnusedImports?` | `boolean` | import の整理で、使っていない import を削除する。既定値は `false` |
+
+### `createTsdownConfig`
+
+```ts
+createTsdownConfig(
+  options?: CreateTsdownConfigOptions,
+): UserConfig
+```
+
+`@fringeworks` のパッケージで共通に使う tsdown の設定を作ります。
+
+- `src` 配下の `.ts`・`.tsx`（`*.test.*`・`*.test-d.*`・`*.spec.*`・`*.d.ts` を除く）を、モジュールごとに ESM（`.mjs`）と CJS（`.cjs`）、型定義に出力する
+- CJS でも default export と named export を併用できるよう、`exports: 'named'` で出力する
+- `createExternal()` で、`src` 配下以外の import を外部モジュールとして扱う
+- `@fringeworks/rollup-plugin-dist-package` で `dist/package.json` を生成する。`exports` は `createExports` の結果に `./package.json` を加えたもの
+- `LICENSE`・`README.md`・`README.ja.md` のうち、存在するものを `dist` にコピーする
+
+`exports` のオプションを作るときに `src` を探索するため、パッケージのルートで実行します。
+
+| オプション   | 型                                     | 説明                                                                                                             |
+| ------------ | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `css?`       | `boolean`                              | CSS を含むパッケージ向けの設定（下記）を有効にする。既定値は `false`                                             |
+| `exports?`   | `Omit<CreateExportsOptions, 'target'>` | `createExports` に渡すオプション。`target` は常に `'dist'` になり、`extraExports` には `./package.json` が加わる |
+| `entry?`     | `string[]`                             | ビルドの対象を置き換える                                                                                         |
+| `copyFiles?` | `string[]`                             | `LICENSE`・`README.md`・`README.ja.md` に加えて、`dist` にコピーするファイル                                     |
+
+`css: true` の場合は次のようになります。
+
+- CSS を import したモジュールの出力に、CSS ファイルの import を残す（`css.inject`）
+- `package.json` の `sideEffects` を `['**/*.css']` にする
+- CJS の出力で、CSS を指す `require` の拡張子を `.css` に直す。`css.inject` が ESM の import 文だけを書き換え、CJS では出力されない `.cjs` を `require` したままになるため
+
+CSS を扱うには、使う側に `@tsdown/css`（Sass を使う場合は `sass` も）をインストールします。
 
 ### `generatePublishPackageJson`
 
@@ -680,6 +754,7 @@ isIncludedPath<O extends ConditionFnOptions = ConditionFnOptions>(
 | `CreateSassClassNameFunctionOptions` | `createSassClassNameFunction` のオプション           |
 | `CreateESLintConfigOptions`          | `createESLintConfig` のオプション                    |
 | `CreatePrettierConfigOptions`        | `createPrettierConfig` のオプション                  |
+| `CreateTsdownConfigOptions`          | `createTsdownConfig` のオプション                    |
 | `GeneratePublishPackageJsonOptions`  | `generatePublishPackageJson` のオプション            |
 | `InstallFromLocalOptions`            | `installFromLocal` のオプション                      |
 | `SetVersionOptions`                  | `setVersion` のオプション                            |

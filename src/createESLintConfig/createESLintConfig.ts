@@ -16,9 +16,14 @@ const IGNORES = [
 ];
 
 /**
- * テストのファイル
+ * テストと stories のファイル（公開しない開発用のコード）
  */
-const TEST_FILES = ['**/*.test.{ts,tsx}', '**/*.test-d.{ts,tsx}', 'e2e/**'];
+const DEV_ONLY_FILES = [
+  '**/*.test.{ts,tsx}',
+  '**/*.test-d.{ts,tsx}',
+  'e2e/**',
+  'stories/**',
+];
 
 /**
  * `@fringeworks` のパッケージで共通に使う ESLint の設定（flat config）を作る
@@ -61,9 +66,9 @@ export default function createESLintConfig(
       },
     },
     {
-      files: TEST_FILES,
+      files: DEV_ONLY_FILES,
       rules: {
-        // テストでは不正な値を渡すために any を使う
+        // テストでは不正な値を渡し、stories では DOM などを手軽に操作するために any を使う
         '@typescript-eslint/no-explicit-any': 'off',
       },
     },

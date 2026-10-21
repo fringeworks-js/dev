@@ -38,8 +38,14 @@ describe('createESLintConfig', () => {
     ]);
   });
 
-  it.each(['src/a.test.ts', 'src/a.test-d.tsx', 'e2e/a.e2e.spec.ts'])(
-    'テストのファイル（%s）では any を許容する',
+  it.each([
+    'src/a.test.ts',
+    'src/a.test-d.tsx',
+    'e2e/a.e2e.spec.ts',
+    'stories/a.stories.tsx',
+    'stories/_internal/a.ts',
+  ])(
+    'テストと stories のファイル（%s）では any を許容する',
     async (filePath) => {
       expect(await lint('export const a: any = 1;\n', filePath)).toEqual([]);
     },
@@ -75,8 +81,12 @@ describe('createESLintConfig', () => {
   it('.tsx と src の外のファイルも対象にする', async () => {
     const code = 'export const a: any = 1;\n';
     expect(await lint(code, 'src/a.tsx')).toHaveLength(1);
-    expect(await lint(code, 'stories/a.stories.tsx')).toHaveLength(1);
+    expect(await lint(code, 'scripts/a.ts')).toHaveLength(1);
     expect(await lint(code, 'vite.config.ts')).toHaveLength(1);
+    // stories は any を許容するが、他のルールは適用する
+    expect(
+      await lint('export function a() {\n  const b = 1;\n}\n', 'stories/a.ts'),
+    ).toEqual(['@typescript-eslint/no-unused-vars']);
   });
 
   it.each([

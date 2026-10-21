@@ -5,6 +5,7 @@ export * from './createExports';
 export * from './createExternal';
 export * from './createPrettierConfig';
 export * from './createSassClassNameFunction';
+export * from './createTsdownConfig';
 export * from './editJsonFile';
 export * from './generateIndexFiles';
 export * from './generatePublishPackageJson';

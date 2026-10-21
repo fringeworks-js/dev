@@ -167,6 +167,46 @@ import createPrettierConfig from '@fringeworks/dev/createPrettierConfig';
 export default createPrettierConfig({ removeUnusedImports: true });
 ```
 
+### Shared tsdown config
+
+Creates the tsdown config shared by the `@fringeworks` packages. It outputs the files under `src` as ESM and CJS, and generates a `package.json` for publishing under `dist`. Install `tsdown` in the package that uses it.
+
+```ts
+// tsdown.config.ts
+import createTsdownConfig from '@fringeworks/dev/createTsdownConfig';
+
+export default createTsdownConfig();
+```
+
+For packages with CSS, specify `css: true`. The options in `exports` are passed to `createExports`.
+
+```ts
+// tsdown.config.ts
+import createTsdownConfig from '@fringeworks/dev/createTsdownConfig';
+
+export default createTsdownConfig({
+  css: true,
+  exports: {
+    extraExports: { './*.css': './*/styles.css' },
+  },
+});
+```
+
+Add settings that have no option to the returned config.
+
+```ts
+// tsdown.config.ts
+import createTsdownConfig from '@fringeworks/dev/createTsdownConfig';
+import { defineConfig } from 'tsdown';
+
+const config = createTsdownConfig();
+
+export default defineConfig({
+  ...config,
+  outputOptions: { ...config.outputOptions, banner: '/* banner */' },
+});
+```
+
 ## API
 
 | Function                                            | Description                                                                   |
@@ -179,6 +219,7 @@ export default createPrettierConfig({ removeUnusedImports: true });
 | `createSassClassNameFunction(classNames, options?)` | Creates a Sass custom function that returns class names defined in TypeScript |
 | `createESLintConfig(rootDir, options?)`             | Creates the shared ESLint config                                              |
 | `createPrettierConfig(options?)`                    | Creates the shared Prettier config                                            |
+| `createTsdownConfig(options?)`                      | Creates the shared tsdown config                                              |
 | `generatePublishPackageJson(options?)`              | Generates a `package.json` for publishing                                     |
 | `editJsonFile(jsonFilePath, editor)`                | Edits a JSON file                                                             |
 | `installFromLocal(localNodeModulesPath, options?)`  | Copies locally placed packages into `node_modules`                            |
@@ -421,7 +462,7 @@ Creates the ESLint config (flat config) shared by the `@fringeworks` packages.
 
 - Ignores `dist`, `coverage`, `storybook-static` and `test-results`
 - Applies the recommended configs of `@eslint/js` and `typescript-eslint` to every `.ts` and `.tsx` file in the package
-- Reports `any` (`@typescript-eslint/no-explicit-any`) as an error, except in test files (`*.test.*`, `*.test-d.*` and files under `e2e/`)
+- Reports `any` (`@typescript-eslint/no-explicit-any`) as an error, except in test and story files (`*.test.*`, `*.test-d.*` and files under `e2e/` and `stories/`)
 - Reports unused variables (`@typescript-eslint/no-unused-vars`) as an error. Names starting with `_` and names destructured to take the rest with a rest element are allowed
 
 It contains no rules that need type information, so it can also lint files that are not in `include` of tsconfig.
@@ -465,6 +506,39 @@ The plugins are passed as loaded modules, so you don't need to install them in t
 | Option                 | Type      | Description                                                         |
 | ---------------------- | --------- | ------------------------------------------------------------------- |
 | `removeUnusedImports?` | `boolean` | Removes unused imports when organizing imports. Defaults to `false` |
+
+### `createTsdownConfig`
+
+```ts
+createTsdownConfig(
+  options?: CreateTsdownConfigOptions,
+): UserConfig
+```
+
+Creates the tsdown config shared by the `@fringeworks` packages.
+
+- Outputs each module of the `.ts` and `.tsx` files under `src` (except `*.test.*`, `*.test-d.*`, `*.spec.*` and `*.d.ts`) as ESM (`.mjs`), CJS (`.cjs`) and type declarations
+- Outputs with `exports: 'named'` so that CJS can also use both a default export and named exports
+- Treats imports outside `src` as external modules with `createExternal()`
+- Generates `dist/package.json` with `@fringeworks/rollup-plugin-dist-package`. Its `exports` is the result of `createExports` plus `./package.json`
+- Copies `LICENSE`, `README.md` and `README.ja.md` to `dist` if they exist
+
+Run it in the root of the package, because it scans `src` to create the `exports`.
+
+| Option       | Type                                   | Description                                                                                                     |
+| ------------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `css?`       | `boolean`                              | Enables the settings for packages with CSS (below). Defaults to `false`                                         |
+| `exports?`   | `Omit<CreateExportsOptions, 'target'>` | Options passed to `createExports`. `target` is always `'dist'`, and `./package.json` is added to `extraExports` |
+| `entry?`     | `string[]`                             | Replaces the files to build                                                                                     |
+| `copyFiles?` | `string[]`                             | Files to copy to `dist` in addition to `LICENSE`, `README.md` and `README.ja.md`                                |
+
+With `css: true`:
+
+- Keeps the imports of CSS files in the output of modules that import CSS (`css.inject`)
+- Sets `sideEffects` in `package.json` to `['**/*.css']`
+- Changes the extension of `require` calls that point to CSS to `.css` in the CJS output, because `css.inject` only rewrites ESM import statements and CJS keeps requiring a `.cjs` file that is not output
+
+To handle CSS, install `@tsdown/css` (and `sass` to use Sass) in the package that uses it.
 
 ### `generatePublishPackageJson`
 
@@ -680,6 +754,7 @@ Returns `true` if `itemPath` is of the kind `entryType`, matches `include`, and 
 | `CreateSassClassNameFunctionOptions` | Options of `createSassClassNameFunction`                                  |
 | `CreateESLintConfigOptions`          | Options of `createESLintConfig`                                           |
 | `CreatePrettierConfigOptions`        | Options of `createPrettierConfig`                                         |
+| `CreateTsdownConfigOptions`          | Options of `createTsdownConfig`                                           |
 | `GeneratePublishPackageJsonOptions`  | Options of `generatePublishPackageJson`                                   |
 | `InstallFromLocalOptions`            | Options of `installFromLocal`                                             |
 | `SetVersionOptions`                  | Options of `setVersion`                                                   |
