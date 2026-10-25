@@ -25,7 +25,7 @@ export type CreateTsdownConfigOptions = {
   entry?: string[];
 
   /**
-   * `LICENSE`・`README.md`・`README.ja.md`（存在するもの）に加えて、出力先にコピーするファイル
+   * `LICENSE`・`README.md`・`README.ja.md`・`CHANGELOG.md`（存在するもの）に加えて、出力先にコピーするファイル
    * 指定したファイルが存在しない場合はビルドがエラーになる
    */
   copyFiles?: string[];

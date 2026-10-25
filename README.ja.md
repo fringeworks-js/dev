@@ -526,7 +526,7 @@ createTsdownConfig(
 - CJS でも default export と named export を併用できるよう、`exports: 'named'` で出力する
 - `createExternal()` で、`src` 配下以外の import を外部モジュールとして扱う
 - `@fringeworks/rollup-plugin-dist-package` で `dist/package.json` を生成する。`exports` は `createExports` の結果に `./package.json` を加えたもの
-- `LICENSE`・`README.md`・`README.ja.md` のうち、存在するものを `dist` にコピーする
+- `LICENSE`・`README.md`・`README.ja.md`・`CHANGELOG.md` のうち、存在するものを `dist` にコピーする
 
 `exports` のオプションを作るときに `src` を探索するため、パッケージのルートで実行します。
 
@@ -535,7 +535,7 @@ createTsdownConfig(
 | `css?`       | `boolean`                              | CSS を含むパッケージ向けの設定（下記）を有効にする。既定値は `false`                                             |
 | `exports?`   | `Omit<CreateExportsOptions, 'target'>` | `createExports` に渡すオプション。`target` は常に `'dist'` になり、`extraExports` には `./package.json` が加わる |
 | `entry?`     | `string[]`                             | ビルドの対象を置き換える                                                                                         |
-| `copyFiles?` | `string[]`                             | `LICENSE`・`README.md`・`README.ja.md` に加えて、`dist` にコピーするファイル                                     |
+| `copyFiles?` | `string[]`                             | `LICENSE`・`README.md`・`README.ja.md`・`CHANGELOG.md` に加えて、`dist` にコピーするファイル                     |
 
 `css: true` の場合は次のようになります。
 

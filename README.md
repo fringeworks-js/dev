@@ -526,7 +526,7 @@ Creates the tsdown config shared by the `@fringeworks` packages.
 - Outputs with `exports: 'named'` so that CJS can also use both a default export and named exports
 - Treats imports outside `src` as external modules with `createExternal()`
 - Generates `dist/package.json` with `@fringeworks/rollup-plugin-dist-package`. Its `exports` is the result of `createExports` plus `./package.json`
-- Copies `LICENSE`, `README.md` and `README.ja.md` to `dist` if they exist
+- Copies `LICENSE`, `README.md`, `README.ja.md` and `CHANGELOG.md` to `dist` if they exist
 
 Run it in the root of the package, because it scans `src` to create the `exports`.
 
@@ -535,7 +535,7 @@ Run it in the root of the package, because it scans `src` to create the `exports
 | `css?`       | `boolean`                              | Enables the settings for packages with CSS (below). Defaults to `false`                                         |
 | `exports?`   | `Omit<CreateExportsOptions, 'target'>` | Options passed to `createExports`. `target` is always `'dist'`, and `./package.json` is added to `extraExports` |
 | `entry?`     | `string[]`                             | Replaces the files to build                                                                                     |
-| `copyFiles?` | `string[]`                             | Files to copy to `dist` in addition to `LICENSE`, `README.md` and `README.ja.md`                                |
+| `copyFiles?` | `string[]`                             | Files to copy to `dist` in addition to `LICENSE`, `README.md`, `README.ja.md` and `CHANGELOG.md`                |
 
 With `css: true`:
 

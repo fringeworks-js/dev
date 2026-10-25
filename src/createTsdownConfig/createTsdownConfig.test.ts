@@ -21,6 +21,7 @@ const FILES = {
   LICENSE: 'MIT',
   'README.md': '# pkg',
   'README.ja.md': '# pkg',
+  'CHANGELOG.md': '# Changelog',
   'src/index.ts': "export * from './foo';\n",
   'src/foo/index.ts':
     "export { default, default as foo } from './foo';\nexport * from './constants';\n",
@@ -92,18 +93,25 @@ describe('createTsdownConfig', () => {
     expect(exists(dir, 'dist/foo/foo.test.mjs')).toBe(false);
   });
 
-  it('LICENSE と README をコピーする', async () => {
+  it('LICENSE・README・CHANGELOG をコピーする', async () => {
     await buildPackage();
-    for (const file of ['LICENSE', 'README.md', 'README.ja.md']) {
+    for (const file of [
+      'LICENSE',
+      'README.md',
+      'README.ja.md',
+      'CHANGELOG.md',
+    ]) {
       expect(exists(dir, `dist/${file}`)).toBe(true);
     }
   });
 
-  it('LICENSE と README は存在するものだけをコピーする', async () => {
+  it('LICENSE・README・CHANGELOG は存在するものだけをコピーする', async () => {
     removeTempDir(`${dir}/README.ja.md`);
+    removeTempDir(`${dir}/CHANGELOG.md`);
     await buildPackage();
     expect(exists(dir, 'dist/README.md')).toBe(true);
     expect(exists(dir, 'dist/README.ja.md')).toBe(false);
+    expect(exists(dir, 'dist/CHANGELOG.md')).toBe(false);
   });
 
   it('CJS でも default export と named export を両方出力する', async () => {

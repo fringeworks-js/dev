@@ -20,7 +20,7 @@ const DEFAULT_ENTRY = [
 /**
  * 出力先にコピーするファイル（存在するものだけをコピーする）
  */
-const COPY_FILES = ['LICENSE', 'README.md', 'README.ja.md'];
+const COPY_FILES = ['LICENSE', 'README.md', 'README.ja.md', 'CHANGELOG.md'];
 
 /**
  * `@fringeworks` のパッケージで共通に使う tsdown の設定を作る
