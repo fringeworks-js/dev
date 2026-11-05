@@ -1,5 +1,5 @@
 import { posix as path } from 'path';
-import toPosixPath from '../_internal/toPosixPath';
+import toPosixPath from '../_internal/_toPosixPath';
 import isMatchingPath from '../isMatchingPath';
 import type { CreateExternalOptions, ExternalFunction } from './types';
 

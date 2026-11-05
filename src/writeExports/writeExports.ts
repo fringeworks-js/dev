@@ -1,5 +1,5 @@
 import fs from 'fs-extra';
-import { assertExists } from '../_internal/assertPath';
+import { assertExists } from '../_internal/_assertPath';
 import createExports from '../createExports';
 import type { WriteExportsOptions } from './types';
 

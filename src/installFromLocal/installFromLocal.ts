@@ -1,6 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { assertExists } from '../_internal/assertPath';
+import { assertExists } from '../_internal/_assertPath';
 import type { InstallFromLocalOptions } from './types';
 
 /**

@@ -1,9 +1,12 @@
+import { createStringMatcher } from '@fringeworks/utils/string/createStringMatcher';
 import { posix as path } from 'path';
-import { isFunction, isString } from 'remeda';
-import getEntryType from '../_internal/getEntryType';
-import toPosixPath from '../_internal/toPosixPath';
+import { isFunction } from 'remeda';
+import getEntryType from '../_internal/_getEntryType';
+import toPosixPath from '../_internal/_toPosixPath';
 import type {
+  ConditionConfig,
   ConditionFnOptions,
+  ConditionItem,
   ConditionValues,
   IsMatchingPathCondition,
   IsMatchingPathOptions,
@@ -78,28 +81,41 @@ function _isMatching<O extends ConditionFnOptions>(
   condition: IsMatchingPathCondition<O>,
   context: MatchingContext<O>,
 ): boolean {
-  if (isString(condition)) {
-    // 条件が文字列
-    return value.includes(condition);
-  } else if (condition instanceof RegExp) {
-    // 条件が正規表現
-    return condition.test(value);
-  } else if (isFunction(condition)) {
+  if (_isConditionConfig(condition)) {
+    // 条件が設定
+    const { valueType = 'path', entryType = 'both', conditions } = condition;
+    if (entryType !== 'both' && context.getEntryType() !== entryType) {
+      // 種別が異なる、または存在しない
+      return false;
+    }
+    const conditionList: readonly ConditionItem<O>[] = Array.isArray(conditions)
+      ? conditions
+      : [conditions as ConditionItem<O>];
+    // 設定配下のconditionsもor条件
+    return conditionList.some((cond) =>
+      _isMatching(context.values[valueType], cond, context),
+    );
+  }
+  if (isFunction(condition)) {
     // 条件が関数
     return condition(
       context.values,
       (context.options.conditionOptions ?? {}) as O,
     );
   }
-  // 条件が設定
-  const { valueType = 'path', entryType = 'both', conditions } = condition;
-  if (entryType !== 'both' && context.getEntryType() !== entryType) {
-    // 種別が異なる、または存在しない
-    return false;
-  }
-  const conditionList = Array.isArray(conditions) ? conditions : [conditions];
-  // 設定配下のconditionsはand条件
-  return conditionList.every((cond) =>
-    _isMatching(context.values[valueType], cond, context),
+  // 文字列・正規表現・StringComparison は utils と同じルールで比べる（文字列は完全一致）
+  return createStringMatcher(condition)(value);
+}
+
+/**
+ * 条件設定か（StringComparison とは conditions の有無で見分ける）
+ */
+function _isConditionConfig<O extends ConditionFnOptions>(
+  condition: IsMatchingPathCondition<O>,
+): condition is ConditionConfig<O> {
+  return (
+    typeof condition === 'object' &&
+    !(condition instanceof RegExp) &&
+    'conditions' in condition
   );
 }

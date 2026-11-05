@@ -1,5 +1,5 @@
 import type { PackageJson } from 'type-fest';
-import type { ExportEntryExtensions } from '../_internal/createExportEntry';
+import type { ExportEntryExtensions } from '../_internal/_createExportEntry';
 import type { IsMatchingPathCondition } from '../isMatchingPath';
 
 export type CreateExportsOptions = ExportEntryExtensions & {

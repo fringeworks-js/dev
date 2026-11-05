@@ -60,10 +60,37 @@ describe('generateIndexFiles', () => {
     ]);
   });
 
-  it('改行コードの既定値はLF', () => {
+  it('新しく作るindexファイルの改行コードはLF', () => {
     dir = createTempDir({ 'a.ts': D, 'b.ts': D });
     generateIndexFiles({ srcPath: dir });
     expect(readFile(dir, 'index.ts')).not.toContain('\r');
+  });
+
+  it('eolを省略した場合は既存のindexファイルの改行コードに合わせる', () => {
+    dir = createTempDir({
+      'crlf/a.ts': D,
+      'crlf/index.ts': "export { default as old } from './old';\r\n",
+      'lf/a.ts': D,
+      'lf/index.ts': "export { default as old } from './old';\n",
+    });
+    generateIndexFiles({ srcPath: dir });
+    expect(readFile(dir, 'crlf/index.ts')).toBe(
+      "export { default as a } from './a';\r\n",
+    );
+    expect(readFile(dir, 'lf/index.ts')).toBe(
+      "export { default as a } from './a';\n",
+    );
+  });
+
+  it('eolを指定した場合は既存のindexファイルの改行コードより優先する', () => {
+    dir = createTempDir({
+      'a.ts': D,
+      'index.ts': "export { default as a } from './a';\r\n",
+    });
+    generateIndexFiles({ srcPath: dir, eol: '\n' });
+    expect(readFile(dir, 'index.ts')).toBe(
+      "export { default as a } from './a';\n",
+    );
   });
 
   it('eolを指定できる', () => {
@@ -188,7 +215,7 @@ describe('generateIndexFiles', () => {
       dir = createTempDir({ 'my-file.ts': D });
       generateIndexFiles({
         srcPath: dir,
-        exportDefault: [{ valueType: 'base', conditions: 'my-file' }],
+        exportDefault: [{ valueType: 'base', conditions: 'my-file.ts' }],
       });
       expect(readFile(dir, 'index.ts')).toBe(
         "export { default } from './my-file';\n",

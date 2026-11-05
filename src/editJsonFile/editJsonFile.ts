@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { isFunction, merge } from 'remeda';
-import { assertExists } from '../_internal/assertPath';
+import { assertExists } from '../_internal/_assertPath';
 
 /**
  * JSONファイルを更新する\

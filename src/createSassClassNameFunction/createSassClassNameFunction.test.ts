@@ -3,15 +3,15 @@ import createSassClassNameFunction from './createSassClassNameFunction';
 
 describe('createSassClassNameFunction', () => {
   const CLASS_NAMES = {
-    stack: 'frg-layout-stack',
-    'layout-stack-item': 'frg-layout-stack-item',
+    stack: 'frgs-layout-stack',
+    'layout-stack-item': 'frgs-layout-stack-item',
   };
 
   it('キーに対応するクラス名をSassの文字列で返す', () => {
     const fn = createSassClassNameFunction(CLASS_NAMES);
     const result = fn([new SassString('stack')]);
     expect(result).toBeInstanceOf(SassString);
-    expect(result.text).toBe('frg-layout-stack');
+    expect(result.text).toBe('frgs-layout-stack');
   });
 
   it('prefix・suffixを付けたキーで引く', () => {
@@ -19,7 +19,7 @@ describe('createSassClassNameFunction', () => {
       prefix: 'layout-',
       suffix: '-item',
     });
-    expect(fn([new SassString('stack')]).text).toBe('frg-layout-stack-item');
+    expect(fn([new SassString('stack')]).text).toBe('frgs-layout-stack-item');
   });
 
   it('キーに対応するクラス名が無い場合は例外を投げる', () => {
@@ -44,7 +44,7 @@ describe('createSassClassNameFunction', () => {
       const { css } = compileString('.#{cls("stack")} { display: flex; }', {
         functions,
       });
-      expect(css).toContain('.frg-layout-stack');
+      expect(css).toContain('.frgs-layout-stack');
     });
 
     it('クラス名が無い場合はSassのエラーにする', () => {

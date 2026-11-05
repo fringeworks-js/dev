@@ -1,4 +1,4 @@
-import getEntryType from '../_internal/getEntryType';
+import getEntryType from '../_internal/_getEntryType';
 import type { ConditionFnOptions } from '../isMatchingPath';
 import isMatchingPath from '../isMatchingPath';
 import type { IsIncludedPathOptions } from './types';

@@ -1,11 +1,11 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { assertDirectory } from '../_internal/assertPath';
-import compareNames from '../_internal/compareNames';
-import detectExports from '../_internal/detectExports';
-import type { ExportForm } from '../_internal/exportForms';
-import { EXPORT_FORMS, toExportName } from '../_internal/exportForms';
-import toPosixPath from '../_internal/toPosixPath';
+import { assertDirectory } from '../_internal/_assertPath';
+import compareNames from '../_internal/_compareNames';
+import detectExports from '../_internal/_detectExports';
+import type { ExportForm } from '../_internal/_exportForms';
+import { EXPORT_FORMS, toExportName } from '../_internal/_exportForms';
+import toPosixPath from '../_internal/_toPosixPath';
 import isMatchingPath, { type IsMatchingPathOptions } from '../isMatchingPath';
 import {
   DEFAULT_EXCLUDE,
@@ -93,7 +93,7 @@ export default function generateIndexFiles(
     exportDefaultAndNamed = DEFAULT_EXPORT_DEFAULT_AND_NAMED,
     exportTypeAll = DEFAULT_EXPORT_TYPE_ALL,
     importSideEffect = DEFAULT_IMPORT_SIDE_EFFECT,
-    eol = '\n',
+    eol,
     encoding = 'utf8',
     ...rest
   } = options;
@@ -124,7 +124,10 @@ export default function generateIndexFiles(
 function _generateIndexFiles(
   targetPath: string,
   indexRegex: RegExp,
-  options: GenerateIndexFilesOptions & { indexFileName: string },
+  options: GenerateIndexFilesOptions & {
+    indexFileName: string;
+    encoding: BufferEncoding;
+  },
 ): PrivateGenerateIndexFilesResult {
   const {
     indexFileName,
@@ -238,15 +241,16 @@ function _generateIndexFiles(
     exports = transform(exports, { indexPath });
   }
 
+  // 未指定の場合は既存のファイルに合わせ、内容が変わらなければ同じバイト列になるようにする
+  const lineEnding = eol ?? _detectEol(indexPath, encoding);
+  const content = exports.join(lineEnding) + lineEnding;
   if (!dryRun) {
     // indexファイルの出力
-    fs.writeFileSync(indexPath, exports.join(eol) + eol, {
-      encoding,
-    });
+    fs.writeFileSync(indexPath, content, { encoding });
     console.info(indexPath);
   } else {
     console.info(indexPath + '-------------------------------------');
-    console.info(exports.join(eol) + eol);
+    console.info(content);
   }
   indexPaths.push(path.resolve(indexPath));
 
@@ -270,6 +274,22 @@ function _fitFormToFile(form: ExportForm, itemPath: string): ExportForm {
     return 'exportAll';
   }
   return hasType ? 'exportTypeAll' : 'importSideEffect';
+}
+
+/**
+ * 既存のファイルの改行コードを返す\
+ * CRLFを含む場合は`\r\n`、それ以外とファイルが無い場合は`\n`
+ * @param filePath ファイルのパス
+ * @param encoding ファイルのエンコード
+ * @returns 改行コード
+ */
+function _detectEol(filePath: string, encoding: BufferEncoding): string {
+  if (!fs.existsSync(filePath)) {
+    return '\n';
+  }
+  return fs.readFileSync(filePath, { encoding }).includes('\r\n')
+    ? '\r\n'
+    : '\n';
 }
 
 function _createRegex(str: string) {

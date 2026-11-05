@@ -126,9 +126,9 @@ export type GenerateIndexFilesOptions = {
   transform?: (exports: string[], context: IndexTransformContext) => string[];
 
   /**
-   * 出力の改行コード
-   *
-   * @default '\n'
+   * 出力の改行コード\
+   * 未指定の場合は、既存のindexファイルに合わせる（CRLFを含む場合は`\r\n`、それ以外は`\n`）。
+   * 新しく作るindexファイルは`\n`にする
    */
   eol?: string;
 

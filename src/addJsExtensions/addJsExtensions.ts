@@ -1,8 +1,8 @@
 import fg from 'fast-glob';
 import fs from 'fs-extra';
 import path from 'path';
-import { assertDirectory } from '../_internal/assertPath';
-import getEntryType from '../_internal/getEntryType';
+import { assertDirectory } from '../_internal/_assertPath';
+import getEntryType from '../_internal/_getEntryType';
 
 /**
  * 相対パスのimport・export・requireの指定子

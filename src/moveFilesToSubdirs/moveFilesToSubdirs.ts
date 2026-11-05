@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { assertDirectory } from '../_internal/assertPath';
-import { EXPORT_FORMS, isIdentifierName } from '../_internal/exportForms';
+import { assertDirectory } from '../_internal/_assertPath';
+import { EXPORT_FORMS, isIdentifierName } from '../_internal/_exportForms';
 import isIncludedPath from '../isIncludedPath';
 import type { MoveFilesToSubdirsOptions } from './types';
 

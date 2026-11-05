@@ -6,9 +6,32 @@ import type { ConditionConfig } from './types';
 
 describe('isMatchingPath', () => {
   describe('条件の種類', () => {
-    it('文字列はパスに含まれていれば一致', () => {
-      expect(isMatchingPath('src/foo/bar.ts', 'foo/')).toBe(true);
-      expect(isMatchingPath('src/foo/bar.ts', 'baz')).toBe(false);
+    it('文字列はパスと完全に一致すれば一致', () => {
+      expect(isMatchingPath('src/foo/bar.ts', 'src/foo/bar.ts')).toBe(true);
+      expect(isMatchingPath('src/foo/bar.ts', 'foo/')).toBe(false);
+    });
+
+    it('StringComparisonは比べ方にすべて合えば一致', () => {
+      expect(isMatchingPath('src/foo/bar.ts', { includes: 'foo/' })).toBe(true);
+      expect(
+        isMatchingPath('src/foo/bar.ts', {
+          startsWith: 'src/',
+          endsWith: '.ts',
+        }),
+      ).toBe(true);
+      expect(
+        isMatchingPath('src/foo/bar.ts', {
+          startsWith: 'src/',
+          endsWith: '.js',
+        }),
+      ).toBe(false);
+      expect(isMatchingPath('src/foo/bar.ts', { matches: '/bar\\.ts$' })).toBe(
+        true,
+      );
+    });
+
+    it('比べ方の無いStringComparisonは一致しない', () => {
+      expect(isMatchingPath('src/foo/bar.ts', {})).toBe(false);
     });
 
     it('正規表現はパスに一致すれば一致', () => {
@@ -18,6 +41,9 @@ describe('isMatchingPath', () => {
 
     it('配列はOR条件', () => {
       expect(isMatchingPath('src/foo/bar.ts', ['baz', /bar/])).toBe(true);
+      expect(
+        isMatchingPath('src/foo/bar.ts', ['baz', { endsWith: '.ts' }]),
+      ).toBe(true);
       expect(isMatchingPath('src/foo/bar.ts', ['baz', /qux/])).toBe(false);
     });
 
@@ -80,13 +106,33 @@ describe('isMatchingPath', () => {
       }
     });
 
-    it('conditionsの配列はAND条件', () => {
+    it('conditionsの配列はOR条件', () => {
       const condition = {
         valueType: 'base' as const,
-        conditions: [/^baz/, /\.ts$/],
+        conditions: ['index.ts', /^baz/],
+      };
+      expect(isMatchingPath('src/index.ts', condition)).toBe(true);
+      expect(isMatchingPath('src/baz.js', condition)).toBe(true);
+      expect(isMatchingPath('src/qux.ts', condition)).toBe(false);
+    });
+
+    it('AND条件はStringComparisonに並べて書く', () => {
+      const condition = {
+        valueType: 'base' as const,
+        conditions: { startsWith: 'baz', matches: /\.ts$/ },
       };
       expect(isMatchingPath('src/baz.ts', condition)).toBe(true);
       expect(isMatchingPath('src/baz.js', condition)).toBe(false);
+    });
+
+    it('conditionsの文字列は値と完全に一致すれば一致', () => {
+      const condition = { valueType: 'base' as const, conditions: 'baz.ts' };
+      expect(isMatchingPath('src/baz.ts', condition)).toBe(true);
+      expect(isMatchingPath('src/foobaz.ts', condition)).toBe(false);
+    });
+
+    it('conditionsの空配列は一致しない', () => {
+      expect(isMatchingPath('src/baz.ts', { conditions: [] })).toBe(false);
     });
 
     it('conditionsの関数にも値が渡される', () => {
@@ -139,13 +185,19 @@ describe('isMatchingPath', () => {
     });
 
     it('fileはファイルだけに一致', () => {
-      const condition = { entryType: 'file' as const, conditions: '' };
+      const condition = {
+        entryType: 'file' as const,
+        conditions: { includes: '' },
+      };
       expect(isMatchingPath(path.join(dir, 'file.ts'), condition)).toBe(true);
       expect(isMatchingPath(path.join(dir, 'sub'), condition)).toBe(false);
     });
 
     it('dirはディレクトリだけに一致', () => {
-      const condition = { entryType: 'dir' as const, conditions: '' };
+      const condition = {
+        entryType: 'dir' as const,
+        conditions: { includes: '' },
+      };
       expect(isMatchingPath(path.join(dir, 'file.ts'), condition)).toBe(false);
       expect(isMatchingPath(path.join(dir, 'sub'), condition)).toBe(true);
     });

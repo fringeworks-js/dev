@@ -94,7 +94,7 @@ export default defineConfig({
 import createSassClassNameFunction from '@fringeworks/dev/createSassClassNameFunction';
 import * as sass from 'sass';
 
-const CLASS_NAMES = { stack: 'frg-layout-stack' };
+const CLASS_NAMES = { stack: 'frgs-layout-stack' };
 
 sass.compile('style.scss', {
   functions: {
@@ -260,7 +260,7 @@ Returns the absolute paths of the generated index files. Throws if `srcPath` is 
 | `exportTypeAll?`         | `IsMatchingPathCondition[]`                                       | What to export as `export type * from './name';`. Defaults to `[TYPES]`                                                                                                                   |
 | `dryRun?`                | `boolean`                                                         | Prints the generated content to the console instead of writing files                                                                                                                      |
 | `transform?`             | `(exports: string[], context: IndexTransformContext) => string[]` | Edits the array of export statements before output. `context.indexPath` is the path of the index file to write (a `/`-separated path based on `srcPath`, such as `src/with-css/index.ts`) |
-| `eol?`                   | `string`                                                          | The line ending. Defaults to `'\n'`                                                                                                                                                       |
+| `eol?`                   | `string`                                                          | The line ending. When omitted, it follows the existing index file (`'\r\n'` if it contains CRLF, otherwise `'\n'`), and new index files use `'\n'`                                        |
 | `encoding?`              | `BufferEncoding`                                                  | The output encoding. Defaults to `'utf8'`                                                                                                                                                 |
 
 #### Constants
@@ -690,20 +690,21 @@ The path is normalized to `/` separators (Windows `\` separators included) befor
 | ------------------- | ---- | ------------------------------------------------------------ |
 | `conditionOptions?` | `O`  | A value passed to condition functions as the second argument |
 
-A condition `IsMatchingPathCondition` can be one of the following.
+A condition `IsMatchingPathCondition` can be one of the following. Strings, `RegExp`s, and `StringComparison`s are compared by the same rules as `createStringMatcher` of `@fringeworks/utils` (a string is an exact match; write a partial match as `{ includes: '...' }`).
 
-| Value             | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `string`          | Matches if the path contains the string                  |
-| `RegExp`          | Matches if the path matches the regular expression       |
-| `ConditionFn`     | Matches if `(values, options) => boolean` returns `true` |
-| `ConditionConfig` | Tests according to the settings below                    |
+| Value              | Description                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `string`           | Matches if the path is exactly the string                                                                              |
+| `RegExp`           | Matches if the path matches the regular expression                                                                     |
+| `StringComparison` | Matches if the path satisfies all of the comparisons (`{ includes }`, `{ startsWith }`, `{ endsWith }`, `{ matches }`) |
+| `ConditionFn`      | Matches if `(values, options) => boolean` returns `true`                                                               |
+| `ConditionConfig`  | Tests according to the settings below                                                                                  |
 
-| Property     | Type                                                                                     | Description                                                                                                                                      |
-| ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | The value to test. Defaults to `'path'`                                                                                                          |
-| `entryType?` | `EntryType`                                                                              | The kind of entry. Defaults to `'both'`. With `'dir'` or `'file'`, a path that does not exist does not match (`'both'` does not check existence) |
-| `conditions` | `string \| RegExp \| ConditionFn<O> \| (string \| RegExp \| ConditionFn<O>)[]`           | Conditions. An array is treated as AND                                                                                                           |
+| Property     | Type                                                                                     | Description                                                                                                                                                       |
+| ------------ | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | The value to test. Defaults to `'path'`                                                                                                                           |
+| `entryType?` | `EntryType`                                                                              | The kind of entry. Defaults to `'both'`. With `'dir'` or `'file'`, a path that does not exist does not match (`'both'` does not check existence)                  |
+| `conditions` | `ConditionItem<O> \| readonly ConditionItem<O>[]`                                        | Conditions (a string, a `RegExp`, a `StringComparison`, or a `ConditionFn`). An array is treated as OR. Write AND conditions side by side in a `StringComparison` |
 
 The values of `valueType` are as follows.
 
@@ -722,7 +723,7 @@ The values of `valueType` are as follows.
 // .tsx files under src/components
 isMatchingPath('src/components/Button.tsx', {
   entryType: 'file',
-  conditions: ['src/components/', /\.tsx$/],
+  conditions: { startsWith: 'src/components/', endsWith: '.tsx' },
 });
 ```
 
@@ -748,32 +749,33 @@ Returns `true` if `itemPath` is of the kind `entryType`, matches `include`, and 
 
 ### Types
 
-| Type                                 | Description                                                               |
-| ------------------------------------ | ------------------------------------------------------------------------- |
-| `GenerateIndexFilesOptions`          | Options of `generateIndexFiles`                                           |
-| `IndexTransformContext`              | The second argument of `transform` of `generateIndexFiles`                |
-| `CreateExportsOptions`               | Options of `createExports`                                                |
-| `WriteExportsOptions`                | Options of `writeExports`                                                 |
-| `CreateExternalOptions`              | Options of `createExternal`                                               |
-| `ExternalFunction`                   | A function for the `external` option                                      |
-| `ConditionOptions`                   | The value passed to condition functions of `createExternal`               |
-| `CreateSassClassNameFunctionOptions` | Options of `createSassClassNameFunction`                                  |
-| `CreateESLintConfigOptions`          | Options of `createESLintConfig`                                           |
-| `CreatePrettierConfigOptions`        | Options of `createPrettierConfig`                                         |
-| `CreateTsdownConfigOptions`          | Options of `createTsdownConfig`                                           |
-| `GeneratePublishPackageJsonOptions`  | Options of `generatePublishPackageJson`                                   |
-| `InstallFromLocalOptions`            | Options of `installFromLocal`                                             |
-| `SetVersionOptions`                  | Options of `setVersion`                                                   |
-| `MoveFilesToSubdirsOptions`          | Options of `moveFilesToSubdirs`                                           |
-| `RemoveFilesOptions`                 | Options of `removeFiles` (fast-glob options)                              |
-| `IsMatchingPathCondition<O>`         | A condition                                                               |
-| `IsMatchingPathOptions<O>`           | Options of `isMatchingPath`                                               |
-| `ConditionConfig<O>`                 | Condition settings                                                        |
-| `ConditionFn<O>`                     | A condition function                                                      |
-| `ConditionFnOptions`                 | The second argument of condition functions                                |
-| `ConditionValues`                    | The first argument of condition functions, holding each `valueType` value |
-| `IsIncludedPathOptions<O>`           | Options of `isIncludedPath`                                               |
-| `EntryType`                          | The kind of entry (`'dir' \| 'file' \| 'both'`)                           |
+| Type                                 | Description                                                                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `GenerateIndexFilesOptions`          | Options of `generateIndexFiles`                                                                                         |
+| `IndexTransformContext`              | The second argument of `transform` of `generateIndexFiles`                                                              |
+| `CreateExportsOptions`               | Options of `createExports`                                                                                              |
+| `WriteExportsOptions`                | Options of `writeExports`                                                                                               |
+| `CreateExternalOptions`              | Options of `createExternal`                                                                                             |
+| `ExternalFunction`                   | A function for the `external` option                                                                                    |
+| `ConditionOptions`                   | The value passed to condition functions of `createExternal`                                                             |
+| `CreateSassClassNameFunctionOptions` | Options of `createSassClassNameFunction`                                                                                |
+| `CreateESLintConfigOptions`          | Options of `createESLintConfig`                                                                                         |
+| `CreatePrettierConfigOptions`        | Options of `createPrettierConfig`                                                                                       |
+| `CreateTsdownConfigOptions`          | Options of `createTsdownConfig`                                                                                         |
+| `GeneratePublishPackageJsonOptions`  | Options of `generatePublishPackageJson`                                                                                 |
+| `InstallFromLocalOptions`            | Options of `installFromLocal`                                                                                           |
+| `SetVersionOptions`                  | Options of `setVersion`                                                                                                 |
+| `MoveFilesToSubdirsOptions`          | Options of `moveFilesToSubdirs`                                                                                         |
+| `RemoveFilesOptions`                 | Options of `removeFiles` (fast-glob options)                                                                            |
+| `IsMatchingPathCondition<O>`         | A condition                                                                                                             |
+| `IsMatchingPathOptions<O>`           | Options of `isMatchingPath`                                                                                             |
+| `ConditionConfig<O>`                 | Condition settings                                                                                                      |
+| `ConditionItem<O>`                   | One condition in `conditions` of condition settings (a string, a `RegExp`, a `StringComparison`, or a `ConditionFn<O>`) |
+| `ConditionFn<O>`                     | A condition function                                                                                                    |
+| `ConditionFnOptions`                 | The second argument of condition functions                                                                              |
+| `ConditionValues`                    | The first argument of condition functions, holding each `valueType` value                                               |
+| `IsIncludedPathOptions<O>`           | Options of `isIncludedPath`                                                                                             |
+| `EntryType`                          | The kind of entry (`'dir' \| 'file' \| 'both'`)                                                                         |
 
 Types can be imported from each function's subpath (e.g. `@fringeworks/dev/generateIndexFiles`).
 

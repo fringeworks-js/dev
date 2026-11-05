@@ -1,6 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { assertDirectory, assertExists } from '../_internal/assertPath';
+import { assertDirectory, assertExists } from '../_internal/_assertPath';
 import type { SetVersionOptions } from './types';
 
 /**

@@ -1,8 +1,8 @@
 import fs from 'fs-extra';
 import { pick } from 'remeda';
 import type { PackageJson } from 'type-fest';
-import { assertExists } from '../_internal/assertPath';
-import createExportEntry from '../_internal/createExportEntry';
+import { assertExists } from '../_internal/_assertPath';
+import createExportEntry from '../_internal/_createExportEntry';
 import type { GeneratePublishPackageJsonOptions } from './types';
 
 /**

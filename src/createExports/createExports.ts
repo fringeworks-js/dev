@@ -1,9 +1,9 @@
 import fs from 'fs-extra';
 import { posix as path } from 'path';
 import type { PackageJson } from 'type-fest';
-import { assertDirectory } from '../_internal/assertPath';
-import createExportEntry from '../_internal/createExportEntry';
-import toPosixPath from '../_internal/toPosixPath';
+import { assertDirectory } from '../_internal/_assertPath';
+import createExportEntry from '../_internal/_createExportEntry';
+import toPosixPath from '../_internal/_toPosixPath';
 import { DEFAULT_EXCLUDE } from '../constants';
 import type { IsMatchingPathCondition } from '../isMatchingPath';
 import isMatchingPath from '../isMatchingPath';

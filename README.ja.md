@@ -94,7 +94,7 @@ export default defineConfig({
 import createSassClassNameFunction from '@fringeworks/dev/createSassClassNameFunction';
 import * as sass from 'sass';
 
-const CLASS_NAMES = { stack: 'frg-layout-stack' };
+const CLASS_NAMES = { stack: 'frgs-layout-stack' };
 
 sass.compile('style.scss', {
   functions: {
@@ -260,7 +260,7 @@ export する対象がないディレクトリには index ファイルを生成
 | `exportTypeAll?`         | `IsMatchingPathCondition[]`                                       | `export type * from './name';` で export するもの。既定値は `[TYPES]`                                                                                                       |
 | `dryRun?`                | `boolean`                                                         | ファイルを書き込まず、生成内容をコンソールに出力する                                                                                                                        |
 | `transform?`             | `(exports: string[], context: IndexTransformContext) => string[]` | 出力前に export 文の配列を編集する。`context.indexPath` で出力する index ファイルのパス（`srcPath` を基準にした `/` 区切りのパス。例: `src/with-css/index.ts`）を受け取れる |
-| `eol?`                   | `string`                                                          | 改行コード。既定値は `'\n'`                                                                                                                                                 |
+| `eol?`                   | `string`                                                          | 改行コード。省略した場合は既存の index ファイルに合わせ（CRLF を含む場合は `'\r\n'`、それ以外は `'\n'`）、新しく作る index ファイルは `'\n'` にする                         |
 | `encoding?`              | `BufferEncoding`                                                  | 出力のエンコード。既定値は `'utf8'`                                                                                                                                         |
 
 #### 定数
@@ -690,20 +690,21 @@ isMatchingPath<O extends ConditionFnOptions = ConditionFnOptions>(
 | ------------------- | --- | ------------------------------- |
 | `conditionOptions?` | `O` | 条件の関数に第2引数として渡す値 |
 
-条件 `IsMatchingPathCondition` には次の値を指定できます。
+条件 `IsMatchingPathCondition` には次の値を指定できます。文字列・`RegExp`・`StringComparison` は、`@fringeworks/utils` の `createStringMatcher` と同じルールで比べます（文字列は完全一致。部分一致は `{ includes: '...' }` で書く）。
 
-| 値                | 説明                                                  |
-| ----------------- | ----------------------------------------------------- |
-| `string`          | パスにその文字列が含まれていれば一致                  |
-| `RegExp`          | パスが正規表現に一致すれば一致                        |
-| `ConditionFn`     | `(values, options) => boolean` が `true` を返せば一致 |
-| `ConditionConfig` | 下記の設定に従って検査する                            |
+| 値                 | 説明                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| `string`           | パスと完全に一致すれば一致                                                                        |
+| `RegExp`           | パスが正規表現に一致すれば一致                                                                    |
+| `StringComparison` | パスが比べ方（`{ includes }`・`{ startsWith }`・`{ endsWith }`・`{ matches }`）にすべて合えば一致 |
+| `ConditionFn`      | `(values, options) => boolean` が `true` を返せば一致                                             |
+| `ConditionConfig`  | 下記の設定に従って検査する                                                                        |
 
-| プロパティ   | 型                                                                                       | 説明                                                                                                               |
-| ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | 検査する値。既定値は `'path'`                                                                                      |
-| `entryType?` | `EntryType`                                                                              | 対象の種別。既定値は `'both'`。`'dir'`・`'file'` の場合、存在しないパスは一致しない（`'both'` は存在を確認しない） |
-| `conditions` | `string \| RegExp \| ConditionFn<O> \| (string \| RegExp \| ConditionFn<O>)[]`           | 一致条件。配列の場合は AND 条件になる                                                                              |
+| プロパティ   | 型                                                                                       | 説明                                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `valueType?` | `'path' \| 'base' \| 'name' \| 'ext' \| 'dirpath' \| 'dirbase' \| 'dirname' \| 'dirext'` | 検査する値。既定値は `'path'`                                                                                                           |
+| `entryType?` | `EntryType`                                                                              | 対象の種別。既定値は `'both'`。`'dir'`・`'file'` の場合、存在しないパスは一致しない（`'both'` は存在を確認しない）                      |
+| `conditions` | `ConditionItem<O> \| readonly ConditionItem<O>[]`                                        | 一致条件（文字列・`RegExp`・`StringComparison`・`ConditionFn`）。配列の場合は OR 条件になる。AND 条件は `StringComparison` に並べて書く |
 
 `valueType` の各値は次のとおりです。
 
@@ -722,7 +723,7 @@ isMatchingPath<O extends ConditionFnOptions = ConditionFnOptions>(
 // src/components 配下の .tsx ファイル
 isMatchingPath('src/components/Button.tsx', {
   entryType: 'file',
-  conditions: ['src/components/', /\.tsx$/],
+  conditions: { startsWith: 'src/components/', endsWith: '.tsx' },
 });
 ```
 
@@ -748,32 +749,33 @@ isIncludedPath<O extends ConditionFnOptions = ConditionFnOptions>(
 
 ### 型
 
-| 型                                   | 説明                                                 |
-| ------------------------------------ | ---------------------------------------------------- |
-| `GenerateIndexFilesOptions`          | `generateIndexFiles` のオプション                    |
-| `IndexTransformContext`              | `generateIndexFiles` の `transform` の第2引数        |
-| `CreateExportsOptions`               | `createExports` のオプション                         |
-| `WriteExportsOptions`                | `writeExports` のオプション                          |
-| `CreateExternalOptions`              | `createExternal` のオプション                        |
-| `ExternalFunction`                   | `external` オプションに渡す関数                      |
-| `ConditionOptions`                   | `createExternal` の条件の関数に渡される値            |
-| `CreateSassClassNameFunctionOptions` | `createSassClassNameFunction` のオプション           |
-| `CreateESLintConfigOptions`          | `createESLintConfig` のオプション                    |
-| `CreatePrettierConfigOptions`        | `createPrettierConfig` のオプション                  |
-| `CreateTsdownConfigOptions`          | `createTsdownConfig` のオプション                    |
-| `GeneratePublishPackageJsonOptions`  | `generatePublishPackageJson` のオプション            |
-| `InstallFromLocalOptions`            | `installFromLocal` のオプション                      |
-| `SetVersionOptions`                  | `setVersion` のオプション                            |
-| `MoveFilesToSubdirsOptions`          | `moveFilesToSubdirs` のオプション                    |
-| `RemoveFilesOptions`                 | `removeFiles` のオプション（fast-glob のオプション） |
-| `IsMatchingPathCondition<O>`         | 一致条件                                             |
-| `IsMatchingPathOptions<O>`           | `isMatchingPath` のオプション                        |
-| `ConditionConfig<O>`                 | 条件設定                                             |
-| `ConditionFn<O>`                     | 条件の関数                                           |
-| `ConditionFnOptions`                 | 条件の関数の第2引数                                  |
-| `ConditionValues`                    | 条件の関数の第1引数。`valueType` の各値を持つ        |
-| `IsIncludedPathOptions<O>`           | `isIncludedPath` のオプション                        |
-| `EntryType`                          | 対象の種別（`'dir' \| 'file' \| 'both'`）            |
+| 型                                   | 説明                                                                                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `GenerateIndexFilesOptions`          | `generateIndexFiles` のオプション                                                                     |
+| `IndexTransformContext`              | `generateIndexFiles` の `transform` の第2引数                                                         |
+| `CreateExportsOptions`               | `createExports` のオプション                                                                          |
+| `WriteExportsOptions`                | `writeExports` のオプション                                                                           |
+| `CreateExternalOptions`              | `createExternal` のオプション                                                                         |
+| `ExternalFunction`                   | `external` オプションに渡す関数                                                                       |
+| `ConditionOptions`                   | `createExternal` の条件の関数に渡される値                                                             |
+| `CreateSassClassNameFunctionOptions` | `createSassClassNameFunction` のオプション                                                            |
+| `CreateESLintConfigOptions`          | `createESLintConfig` のオプション                                                                     |
+| `CreatePrettierConfigOptions`        | `createPrettierConfig` のオプション                                                                   |
+| `CreateTsdownConfigOptions`          | `createTsdownConfig` のオプション                                                                     |
+| `GeneratePublishPackageJsonOptions`  | `generatePublishPackageJson` のオプション                                                             |
+| `InstallFromLocalOptions`            | `installFromLocal` のオプション                                                                       |
+| `SetVersionOptions`                  | `setVersion` のオプション                                                                             |
+| `MoveFilesToSubdirsOptions`          | `moveFilesToSubdirs` のオプション                                                                     |
+| `RemoveFilesOptions`                 | `removeFiles` のオプション（fast-glob のオプション）                                                  |
+| `IsMatchingPathCondition<O>`         | 一致条件                                                                                              |
+| `IsMatchingPathOptions<O>`           | `isMatchingPath` のオプション                                                                         |
+| `ConditionConfig<O>`                 | 条件設定                                                                                              |
+| `ConditionItem<O>`                   | 条件設定の `conditions` に指定する条件の1つ（文字列・`RegExp`・`StringComparison`・`ConditionFn<O>`） |
+| `ConditionFn<O>`                     | 条件の関数                                                                                            |
+| `ConditionFnOptions`                 | 条件の関数の第2引数                                                                                   |
+| `ConditionValues`                    | 条件の関数の第1引数。`valueType` の各値を持つ                                                         |
+| `IsIncludedPathOptions<O>`           | `isIncludedPath` のオプション                                                                         |
+| `EntryType`                          | 対象の種別（`'dir' \| 'file' \| 'both'`）                                                             |
 
 型は各関数のサブパス（例: `@fringeworks/dev/generateIndexFiles`）から読み込めます。
 

@@ -1,16 +1,25 @@
+import type { StringComparison } from '@fringeworks/utils/string/createStringMatcher';
 import type { ParsedPath } from 'path';
 
 /**
- * 一致条件
+ * 一致条件\
+ * 文字列・RegExp・StringComparison は `@fringeworks/utils` の `createStringMatcher` と同じルールでパスと比べる
  *
- * - string: 指定された文字列がパスに含まれているものに一致する際にtrue
+ * - string: パスと完全に一致する際にtrue
  * - RegExp: 指定された正規表現にパスが一致する際にtrue
+ * - StringComparison: パスが部分一致・前方一致・後方一致・正規表現の比べ方（`{ includes }` など）にすべて合う際にtrue
  * - ConditionConfig: 条件設定に従って検査し一致したときにtrue
  * - ConditionFn: 関数がtrueを返したときにtrue
  */
 export type IsMatchingPathCondition<
   O extends ConditionFnOptions = ConditionFnOptions,
-> = string | RegExp | ConditionConfig<O> | ConditionFn<O>;
+> = ConditionItem<O> | ConditionConfig<O>;
+
+/**
+ * 条件設定の conditions に指定する一致条件の1つ（文字列・RegExp・StringComparison・ConditionFn）
+ */
+export type ConditionItem<O extends ConditionFnOptions = ConditionFnOptions> =
+  string | RegExp | StringComparison | ConditionFn<O>;
 
 export type IsMatchingPathOptions<
   O extends ConditionFnOptions = ConditionFnOptions,
@@ -63,14 +72,16 @@ export type ConditionConfig<O extends ConditionFnOptions = ConditionFnOptions> =
     entryType?: EntryType;
 
     /**
-     * 一致条件
-     * 配列で指定した場合はand条件とする
+     * 一致条件\
+     * 配列で指定した場合は、どれかに合えば一致する（or条件）。
+     * 複数の比べ方をすべて満たす条件（and条件）は、StringComparison に並べて書く（`{ startsWith: 'src/', endsWith: '.ts' }`）
      *
-     * - string: 指定された文字列を含むものに部分一致
+     * - string: 値と完全に一致
      * - RegExp: 指定された正規表現に一致
+     * - StringComparison: 部分一致・前方一致・後方一致・正規表現の比べ方にすべて合う
+     * - ConditionFn: 関数がtrueを返す
      */
-    conditions:
-      string | RegExp | ConditionFn<O> | (string | RegExp | ConditionFn<O>)[];
+    conditions: ConditionItem<O> | readonly ConditionItem<O>[];
   };
 
 /**

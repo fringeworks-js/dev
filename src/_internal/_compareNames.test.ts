@@ -1,4 +1,4 @@
-import compareNames from './compareNames';
+import compareNames from './_compareNames';
 
 describe('compareNames', () => {
   it('大文字・小文字を区別せずに並べる', () => {
